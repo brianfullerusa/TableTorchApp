@@ -1,0 +1,101 @@
+//
+//  AppSettings.swift
+//  TableTorch
+//
+//  Created by Brian Fuller on 1/4/25.
+//
+
+import SwiftUI
+
+class AppSettings: ObservableObject {
+    @Published var defaultBrightness: CGFloat {
+        didSet { saveSettings() }
+    }
+    @Published var useDefaultBrightnessOnAppear: Bool {
+        didSet { saveSettings() }
+    }
+    @Published var selectedColors: [Color] {
+        didSet { saveSettings() }
+    }
+    @Published var isAngleBasedBrightnessActive: Bool {
+        didSet { saveSettings() }
+    }
+    // Instead of storing the last selected Color, store the index
+    @Published var lastSelectedColorIndex: Int {
+        didSet { saveSettings() }
+    }
+    // allow user to turn on prevent screen lock for the app
+    @Published var preventScreenLock: Bool {
+        didSet { saveSettings() }
+    }
+
+    init() {
+        // Existing code to load defaults...
+        let storedBrightness = UserDefaults.standard.double(forKey: "defaultBrightness")
+        defaultBrightness = storedBrightness == 0 ? 0.75 : CGFloat(storedBrightness)
+        useDefaultBrightnessOnAppear = UserDefaults.standard.bool(forKey: "useDefaultBrightnessOnAppear")
+        preventScreenLock = UserDefaults.standard.bool(forKey: "preventScreenLock")
+    
+
+        if let data = UserDefaults.standard.data(forKey: "selectedColors"),
+           let decoded = try? JSONDecoder().decode([CodableColor].self, from: data) {
+            selectedColors = decoded.map { $0.color }
+        } else {
+            //selectedColors = [.white, .blue, .green, .red]
+            selectedColors = [(Color(red: 255/255, green: 255/255, blue: 255/255)), //white
+                              (Color(red: 255/255, green: 200/255, blue: 150/255)), //soft white
+                              (Color(red: 152/255, green: 255/255, blue: 152/255)), //mint green
+                              (Color(red: 70/255, green: 130/255, blue: 180/255)), //steel blue
+                              //(Color(red: 255/255, green: 100/255, blue: 0/255)), //orange
+                              (Color(red: 255/255, green: 0/255, blue: 0/255)), //red
+                              (Color(red: 128/255, green: 0/255, blue: 0/255))] //dark red
+        }
+
+        isAngleBasedBrightnessActive = UserDefaults.standard.bool(forKey: "isAngleBasedBrightnessActive")
+
+        // NEW: default the index to 0 if nothing is stored
+        lastSelectedColorIndex = UserDefaults.standard.integer(forKey: "lastSelectedColorIndex")
+        if lastSelectedColorIndex < 0 || lastSelectedColorIndex >= selectedColors.count {
+            lastSelectedColorIndex = 0
+        }
+    }
+
+    private func saveSettings() {
+        
+        UserDefaults.standard.set(Double(defaultBrightness), forKey: "defaultBrightness")
+        UserDefaults.standard.set(useDefaultBrightnessOnAppear, forKey: "useDefaultBrightnessOnAppear")
+        UserDefaults.standard.set(preventScreenLock, forKey: "preventScreenLock")
+        
+        let codableColors = selectedColors.map { CodableColor(color: $0) }
+        if let encoded = try? JSONEncoder().encode(codableColors) {
+            UserDefaults.standard.set(encoded, forKey: "selectedColors")
+        }
+
+        UserDefaults.standard.set(isAngleBasedBrightnessActive, forKey: "isAngleBasedBrightnessActive")
+
+        // Save the selected index
+        UserDefaults.standard.set(lastSelectedColorIndex, forKey: "lastSelectedColorIndex")
+    }
+}
+
+// CodableColor struct
+struct CodableColor: Codable {
+    let red: CGFloat
+    let green: CGFloat
+    let blue: CGFloat
+    let alpha: CGFloat
+
+    init(color: Color) {
+        let uiColor = UIColor(color)
+        var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
+        uiColor.getRed(&r, green: &g, blue: &b, alpha: &a)
+        self.red = r
+        self.green = g
+        self.blue = b
+        self.alpha = a
+    }
+
+    var color: Color {
+        Color(.sRGB, red: red, green: green, blue: blue, opacity: alpha)
+    }
+}

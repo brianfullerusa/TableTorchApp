@@ -1,0 +1,42 @@
+# Xcode
+deriveddata/
+DerivedData/
+build/
+Build/
+*.xcworkspace/xcuserdata/
+*.xcodeproj/project.xcworkspace/xcuserdata/
+*.xcuserdata/
+*.xcuserstate
+
+# Swift Package Manager
+.swiftpm/
+Packages/
+Package.resolved
+
+# CocoaPods
+Pods/
+
+# Carthage
+Carthage/Build/
+
+# Accio dependency manager
+Dependencies/
+.accio/
+
+# Fastlane
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots/**/*.png
+
+# iOS device logs
+*.lmdb
+
+# IDE artifacts
+*.xcscmblueprint
+*.xccheckout
+*.xcuserstate
+
+# Misc
+.DS_Store
+*.swp
+*.tmp
