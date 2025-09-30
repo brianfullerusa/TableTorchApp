@@ -30,31 +30,35 @@ class AppSettings: ObservableObject {
     }
 
     init() {
-        // Existing code to load defaults...
-        let storedBrightness = UserDefaults.standard.double(forKey: "defaultBrightness")
-        defaultBrightness = storedBrightness == 0 ? 0.75 : CGFloat(storedBrightness)
-        useDefaultBrightnessOnAppear = UserDefaults.standard.bool(forKey: "useDefaultBrightnessOnAppear")
-        preventScreenLock = UserDefaults.standard.bool(forKey: "preventScreenLock")
-    
+        let defaults = UserDefaults.standard
 
-        if let data = UserDefaults.standard.data(forKey: "selectedColors"),
+        defaults.register(defaults: [
+            "defaultBrightness": 1.0,
+            "useDefaultBrightnessOnAppear": true,
+            "preventScreenLock": true,
+            "isAngleBasedBrightnessActive": true
+        ])
+
+        defaultBrightness = CGFloat(defaults.double(forKey: "defaultBrightness"))
+        useDefaultBrightnessOnAppear = defaults.bool(forKey: "useDefaultBrightnessOnAppear")
+        preventScreenLock = defaults.bool(forKey: "preventScreenLock")
+
+        if let data = defaults.data(forKey: "selectedColors"),
            let decoded = try? JSONDecoder().decode([CodableColor].self, from: data) {
             selectedColors = decoded.map { $0.color }
         } else {
-            //selectedColors = [.white, .blue, .green, .red]
             selectedColors = [(Color(red: 255/255, green: 255/255, blue: 255/255)), //white
                               (Color(red: 255/255, green: 200/255, blue: 150/255)), //soft white
                               (Color(red: 152/255, green: 255/255, blue: 152/255)), //mint green
                               (Color(red: 70/255, green: 130/255, blue: 180/255)), //steel blue
-                              //(Color(red: 255/255, green: 100/255, blue: 0/255)), //orange
                               (Color(red: 255/255, green: 0/255, blue: 0/255)), //red
                               (Color(red: 128/255, green: 0/255, blue: 0/255))] //dark red
         }
 
-        isAngleBasedBrightnessActive = UserDefaults.standard.bool(forKey: "isAngleBasedBrightnessActive")
+        isAngleBasedBrightnessActive = defaults.bool(forKey: "isAngleBasedBrightnessActive")
 
         // NEW: default the index to 0 if nothing is stored
-        lastSelectedColorIndex = UserDefaults.standard.integer(forKey: "lastSelectedColorIndex")
+        lastSelectedColorIndex = defaults.integer(forKey: "lastSelectedColorIndex")
         if lastSelectedColorIndex < 0 || lastSelectedColorIndex >= selectedColors.count {
             lastSelectedColorIndex = 0
         }
