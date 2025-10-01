@@ -1,0 +1,89 @@
+{
+  "fill" : {
+    "linear-gradient" : [
+      "display-p3:0.26179,0.33333,0.49863,1.00000",
+      "display-p3:0.08253,0.10579,0.15687,1.00000"
+    ]
+  },
+  "groups" : [
+    {
+      "layers" : [
+        {
+          "fill" : "none",
+          "hidden" : false,
+          "image-name" : "Flame Layer 2.png",
+          "name" : "Flame Layer 2",
+          "position" : {
+            "scale" : 1,
+            "translation-in-points" : [
+              -15.8046875,
+              29.28125
+            ]
+          }
+        }
+      ],
+      "shadow" : {
+        "kind" : "neutral",
+        "opacity" : 0.5
+      },
+      "translucency" : {
+        "enabled" : true,
+        "value" : 0.5
+      }
+    },
+    {
+      "layers" : [
+        {
+          "hidden" : false,
+          "image-name" : "Flame Layer.png",
+          "name" : "Flame Layer",
+          "position" : {
+            "scale" : 1,
+            "translation-in-points" : [
+              -2.53125,
+              -126.21875
+            ]
+          }
+        }
+      ],
+      "shadow" : {
+        "kind" : "neutral",
+        "opacity" : 0.5
+      },
+      "translucency" : {
+        "enabled" : true,
+        "value" : 0.5
+      }
+    },
+    {
+      "layers" : [
+        {
+          "fill" : "none",
+          "image-name" : "Torch Layer.png",
+          "name" : "Torch Layer",
+          "position" : {
+            "scale" : 1,
+            "translation-in-points" : [
+              1.28125,
+              108.4921875
+            ]
+          }
+        }
+      ],
+      "shadow" : {
+        "kind" : "neutral",
+        "opacity" : 0.5
+      },
+      "translucency" : {
+        "enabled" : true,
+        "value" : 0.5
+      }
+    }
+  ],
+  "supported-platforms" : {
+    "circles" : [
+      "watchOS"
+    ],
+    "squares" : "shared"
+  }
+}

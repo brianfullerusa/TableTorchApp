@@ -190,6 +190,7 @@
       }
     },
     "✓" : {
+      "extractionState" : "stale",
       "localizations" : {
         "da" : {
           "stringUnit" : {
@@ -566,6 +567,7 @@
       }
     },
     "Flashlights" : {
+      "extractionState" : "stale",
       "localizations" : {
         "da" : {
           "stringUnit" : {
@@ -660,6 +662,7 @@
       }
     },
     "Light Your Menu" : {
+      "extractionState" : "stale",
       "localizations" : {
         "da" : {
           "stringUnit" : {
@@ -754,6 +757,7 @@
       }
     },
     "Not the entire Restaurant!" : {
+      "extractionState" : "stale",
       "localizations" : {
         "da" : {
           "stringUnit" : {
@@ -1788,6 +1792,7 @@
       }
     },
     "X" : {
+      "extractionState" : "stale",
       "localizations" : {
         "da" : {
           "stringUnit" : {

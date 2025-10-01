@@ -10,6 +10,7 @@ import CoreMotion
 
 struct ContentView: View {
     @EnvironmentObject var brightnessManager: BrightnessManager
+    @Environment(\.scenePhase) private var scenePhase
     @StateObject private var settings = AppSettings()
     @StateObject private var motionManager = MotionManager()
     @State private var selectedIndex: Int = 0 //store an index for the selected color
@@ -20,37 +21,61 @@ struct ContentView: View {
                 Color.black
                     .edgesIgnoringSafeArea(.all)
 
-                VStack(spacing: 0) {
-                    // Show the color from the array at 'selectedIndex'
-                    Rectangle()
-                        .foregroundColor(settings.selectedColors[safe: selectedIndex] ?? .white)
-                        .cornerRadius(10)
-                        .padding()
+                GeometryReader { proxy in
+                    let totalHeight = proxy.size.height
+                    let bottomPadding = max(proxy.safeAreaInsets.bottom, 16)
+                    let topSpacer = max(totalHeight * 0.01, 8)
+                    let sliderHeight: CGFloat = 30
+                    let buttonHeight: CGFloat = 44
+                    let controlSpacing: CGFloat = 12
+                    let controlsAllowance = topSpacer + controlSpacing + sliderHeight + buttonHeight + bottomPadding
+                    let proposedDisplayHeight = totalHeight * 0.83
+                    let availableHeight = max(totalHeight - controlsAllowance, CGFloat(0))
+                    let desiredHeight = max(proposedDisplayHeight, CGFloat(320))
+                    let displayHeight: CGFloat = {
+                        guard availableHeight >= CGFloat(320) else { return availableHeight }
+                        return min(desiredHeight, availableHeight)
+                    }()
 
-                    Spacer(minLength: 0)
+                    VStack(spacing: 0) {
+                        Rectangle()
+                            .fill(currentColor)
+                        .frame(height: displayHeight)
+                        .frame(maxWidth: .infinity)
+                        .cornerRadius(24)
+                        .padding(.horizontal, 24)
+                        .padding(.top, 24)
+                        .shadow(color: Color.black.opacity(0.35), radius: 18, x: 0, y: 12)
 
-                    VStack(spacing: 10) {
-                        BrightnessSliderView(brightness: $brightnessManager.currentBrightness)
-                            .frame(height: 30)
+                        Spacer(minLength: topSpacer)
 
-                        HStack(spacing: 10) {
-                            // Pass the binding for selectedIndex
-                            ColorButtonsView(
-                                selectedIndex: $selectedIndex,
-                                buttonColors: settings.selectedColors
-                            )
+                        VStack(spacing: controlSpacing) {
+                            BrightnessSliderView(brightness: $brightnessManager.currentBrightness)
+                                .frame(height: sliderHeight)
 
-                            NavigationLink(destination: SettingsView(settings: settings)) {
-                                Image(systemName: "gearshape")
-                                    .resizable()
-                                    .scaledToFit()
-                                    .foregroundColor(.white)
-                                    .frame(width: 30, height: 30)
+                            HStack(spacing: 16) {
+                                ColorButtonsView(
+                                    selectedIndex: $selectedIndex,
+                                    buttonColors: settings.selectedColors
+                                )
+
+                                NavigationLink(destination: SettingsView(settings: settings)) {
+                                    Image(systemName: "gearshape")
+                                        .resizable()
+                                        .scaledToFit()
+                                        .foregroundColor(.white)
+                                        .frame(width: 32, height: 32)
+                                        .padding(10)
+                                        .background(Color.white.opacity(0.08))
+                                        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                                }
                             }
+                            .frame(height: buttonHeight)
                         }
-                        .frame(height: 40)
+                        .padding(.horizontal, 24)
+                        .padding(.bottom, bottomPadding)
                     }
-                    .padding(.bottom)
+                    .frame(width: proxy.size.width, height: proxy.size.height, alignment: .top)
                 }
                 // Header
                 .navigationBarTitleDisplayMode(.inline)
@@ -71,8 +96,7 @@ struct ContentView: View {
         }
         .navigationViewStyle(StackNavigationViewStyle())
         .onAppear {
-            // Save system brightness
-            brightnessManager.saveSystemBrightness()
+            brightnessManager.beginManagingBrightness()
 
             // Use default brightness if set
             if settings.useDefaultBrightnessOnAppear {
@@ -109,12 +133,22 @@ struct ContentView: View {
         }
         // Restore brightness & stop motion on disappear
         .onDisappear {
-            brightnessManager.restoreSystemBrightness()
+            brightnessManager.endManagingBrightness()
             motionManager.stopUpdates()
         }
         // Whenever selectedIndex changes, store it in settings
         .onChange(of: selectedIndex) { newValue in
             settings.lastSelectedColorIndex = newValue
+        }
+        .onChange(of: scenePhase) { phase in
+            switch phase {
+            case .active:
+                brightnessManager.beginManagingBrightness()
+            case .inactive, .background:
+                brightnessManager.endManagingBrightness()
+            @unknown default:
+                break
+            }
         }
         .environmentObject(settings)
     }
@@ -124,5 +158,11 @@ struct ContentView: View {
 extension RandomAccessCollection {
     subscript(safe index: Index) -> Element? {
         return indices.contains(index) ? self[index] : nil
+    }
+}
+
+private extension ContentView {
+    var currentColor: Color {
+        settings.selectedColors[safe: selectedIndex] ?? .white
     }
 }

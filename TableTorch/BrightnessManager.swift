@@ -9,29 +9,40 @@
 import SwiftUI
 
 class BrightnessManager: ObservableObject {
-    private var systemBrightness: CGFloat = UIScreen.main.brightness
+    private var storedSystemBrightness: CGFloat?
+    private var isManagingBrightness = false
 
     @Published var currentBrightness: CGFloat = UIScreen.main.brightness {
         didSet {
+            guard isManagingBrightness else { return }
             UIScreen.main.brightness = currentBrightness
         }
     }
 
-    func saveSystemBrightness() {
-        systemBrightness = UIScreen.main.brightness
+    func beginManagingBrightness() {
+        guard !isManagingBrightness else { return }
+        storedSystemBrightness = UIScreen.main.brightness
+        isManagingBrightness = true
+        UIScreen.main.brightness = currentBrightness
     }
 
-    func restoreSystemBrightness() {
-        UIScreen.main.brightness = systemBrightness
+    func endManagingBrightness() {
+        guard isManagingBrightness else { return }
+        isManagingBrightness = false
+
+        guard let baseline = storedSystemBrightness else { return }
+        UIScreen.main.brightness = baseline
+        storedSystemBrightness = nil
     }
 
     /// Adjust brightness based on how far the screen is tilted away from flat
     ///  tilt ≈ 0 => device flat => 100% brightness
-    ///  tilt ≈ π/2 => device standing on edge => 10% brightness
+    ///  tilt ≈ π/2 => device standing on edge => 30% brightness
     func updateBrightness(for tiltAngle: Double) {
+        guard isManagingBrightness else { return }
         let clamped = min(max(tiltAngle, 0), Double.pi / 2)
         let fraction = clamped / (Double.pi / 2)  // Range 0..1
-        let newBrightness = CGFloat(1.0 - 0.9 * fraction)  // from 1.0 down to 0.1
+        let newBrightness = CGFloat(1.0 - 0.7 * fraction)  // from 1.0 down to 0.3
         currentBrightness = newBrightness
     }
 
@@ -39,4 +50,3 @@ class BrightnessManager: ObservableObject {
         updateBrightness(for: abs(pitch))
     }
 }
-

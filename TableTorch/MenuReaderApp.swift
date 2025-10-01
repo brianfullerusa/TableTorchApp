@@ -7,6 +7,7 @@
 
 
 import SwiftUI
+import UIKit
 
 @main
 struct TableTorchApp: App {
@@ -22,23 +23,24 @@ struct TableTorchApp: App {
                 ContentView()
                     .environmentObject(brightnessManager)
                     .onAppear {
-                        // Save the system brightness at launch
-                        brightnessManager.saveSystemBrightness()
+                        // Begin managing brightness at launch
+                        brightnessManager.beginManagingBrightness()
                     }
                     // When app goes out of foreground
                     .onReceive(NotificationCenter.default.publisher(for: UIScene.willDeactivateNotification)) { _ in
-                        brightnessManager.restoreSystemBrightness()
+                        brightnessManager.endManagingBrightness()
                     }
 
                 // Overlay the splash screen if needed
                 if showSplash {
                     SplashView()
                         .transition(.opacity)
+                        .allowsHitTesting(false)
                 }
             }
             .onAppear {
-                // Hide splash after 2 seconds
-                DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                // Hide splash shortly after launch to match iOS guidance
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
                     withAnimation {
                         showSplash = false
                     }
