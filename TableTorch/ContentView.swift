@@ -81,9 +81,17 @@ struct ContentView: View {
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar {
                     ToolbarItem(placement: .principal) {
-                        Text("Table Torch")
-                            .font(.custom("Copperplate", size: 24))
-                            .foregroundColor(Color(red: 1.0, green: 0.65, blue: 0.0))
+                        HStack(spacing: 8) {
+                            Image("FlameLayerPrimary")
+                                .resizable()
+                                .scaledToFit()
+                                .frame(width: 28, height: 28)
+                                .accessibilityHidden(true)
+
+                            Text("Table Torch")
+                                .font(.custom("Copperplate", size: 24))
+                                .foregroundColor(Color(red: 1.0, green: 0.65, blue: 0.0))
+                        }
                     }
                 }
                 .toolbarBackground(
