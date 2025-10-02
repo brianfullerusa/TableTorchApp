@@ -91,7 +91,7 @@ struct SettingsView: View {
                 ) {
                     Toggle("Enable Tilt Brightness Control", isOn: $settings.isAngleBasedBrightnessActive)
                         .toggleStyle(SwitchToggleStyle(tint: .blue))
-                    Text("Tilt phone:\nVertical=10% brightness,\nFlat=100% brightness")
+                    Text("Tilt phone:\nVertical=30% brightness,\nFlat=100% brightness")
                         .foregroundColor(.white)
                         .font(.footnote)
                 }
