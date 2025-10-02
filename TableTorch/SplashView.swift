@@ -15,11 +15,14 @@ struct SplashView: View {
                 .ignoresSafeArea()
 
             VStack(spacing: 24) {
-                Image("TableTorchLogo")
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: 140, height: 140)
-                    .accessibilityHidden(true)
+                ZStack {
+                    Image("FlameLayerPrimary")
+                        .resizable()
+                        .scaledToFit()
+
+                }
+                .frame(width: 160, height: 160)
+                .accessibilityHidden(true)
 
                 Text("Table Torch")
                     .font(.system(size: 34, weight: .semibold, design: .rounded))

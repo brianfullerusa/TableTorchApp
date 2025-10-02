@@ -40,7 +40,7 @@ struct TableTorchApp: App {
             }
             .onAppear {
                 // Hide splash shortly after launch to match iOS guidance
-                DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1.4) {
                     withAnimation {
                         showSplash = false
                     }
