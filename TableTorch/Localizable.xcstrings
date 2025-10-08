@@ -189,101 +189,6 @@
         }
       }
     },
-    "✓" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "da" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "✓"
-          }
-        },
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "✓"
-          }
-        },
-        "en-AU" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "✓"
-          }
-        },
-        "en-GB" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "✓"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "✓"
-          }
-        },
-        "es-419" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "✓"
-          }
-        },
-        "es-US" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "✓"
-          }
-        },
-        "fi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "✓"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "✓"
-          }
-        },
-        "hr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "✓"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "✓"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "✓"
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "✓"
-          }
-        },
-        "pt-PT" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "✓"
-          }
-        },
-        "sv" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "✓"
-          }
-        }
-      }
-    },
     "Brightness" : {
       "localizations" : {
         "da" : {
@@ -562,291 +467,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Aktivera lutningsbaserad ljusstyrkekontroll"
-          }
-        }
-      }
-    },
-    "Flashlights" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "da" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Lommelygter"
-          }
-        },
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Taschenlampen"
-          }
-        },
-        "en-AU" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Flashlights"
-          }
-        },
-        "en-GB" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Flashlights"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Linternas"
-          }
-        },
-        "es-419" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Linternas"
-          }
-        },
-        "es-US" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Linternas"
-          }
-        },
-        "fi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Taskulamput"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Lampes de poche"
-          }
-        },
-        "hr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Svjetiljke"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Torce"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Zaklampen"
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Latarki"
-          }
-        },
-        "pt-PT" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Lanternas"
-          }
-        },
-        "sv" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ficklampor"
-          }
-        }
-      }
-    },
-    "Light Your Menu" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "da" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Belys Dit Menukort"
-          }
-        },
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Erleuchte deine Speisekarte,"
-          }
-        },
-        "en-AU" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Light Your Menu"
-          }
-        },
-        "en-GB" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Light Your Menu"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ilumina tu menú,"
-          }
-        },
-        "es-419" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ilumina tu menú,"
-          }
-        },
-        "es-US" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ilumina tu menú,"
-          }
-        },
-        "fi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Valaise valikkosi,"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Éclairez votre menu,"
-          }
-        },
-        "hr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Osvijetlite svoj jelovnik,"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Illumina il tuo menu,"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Verlicht je menukaart,"
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Oświetl swoje menu,"
-          }
-        },
-        "pt-PT" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ilumina o teu menu,"
-          }
-        },
-        "sv" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Lys upp din meny,"
-          }
-        }
-      }
-    },
-    "Not the entire Restaurant!" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "da" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ikke Hele Restauranten"
-          }
-        },
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "nicht das ganze Restaurant!"
-          }
-        },
-        "en-AU" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Not the entire Restaurant!"
-          }
-        },
-        "en-GB" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Not the entire Restaurant!"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "no el restaurante."
-          }
-        },
-        "es-419" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "no el restaurante."
-          }
-        },
-        "es-US" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "no el restaurante."
-          }
-        },
-        "fi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "älä koko ravintolaa!"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "pas tout le restaurant !"
-          }
-        },
-        "hr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "a ne cijeli restoran!"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "non l'intero ristorante!"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "niet het hele restaurant!"
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "nie całą restaurację!"
-          }
-        },
-        "pt-PT" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "não todo o restaurante!"
-          }
-        },
-        "sv" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "inte hela restaurangen!"
           }
         }
       }
@@ -1321,96 +941,98 @@
         }
       }
     },
-    "Tilt phone:\nVertical=10% brightness,\nFlat=100% brightness" : {
+    "Tilt phone:\nVertical=30% brightness,\nFlat=100% brightness" : {
+      "comment" : "A description of how to use the tilt-based brightness control.",
+      "isCommentAutoGenerated" : true,
       "localizations" : {
         "da" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Vink telefon:\nLodret = 10% lysstyrke\nFladt = 100% lysstyrke"
+            "value" : "Vippe telefon:\nLodret = 30 % lysstyrke\nFlad = 100 % lysstyrke"
           }
         },
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Kippe das Telefon:\nVertikal = 10 % Helligkeit,\nFlach = 100 % Helligkeit"
+            "value" : "Telefon neigen:\nVertikal = 30 % Helligkeit\nFlach = 100 % Helligkeit"
           }
         },
         "en-AU" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Tilt phone:\nVertical=10% brightness,\nFlat=100% brightness"
+            "value" : "Tilt phone:\nVertical=30% brightness,\nFlat=100% brightness"
           }
         },
         "en-GB" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Tilt phone:\nVertical=10% brightness,\nFlat=100% brightness"
+            "value" : "Tilt phone:\nVertical=30% brightness,\nFlat=100% brightness"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Inclina el teléfono:\nVertical = 10% de brillo,\nPlano = 100% de brillo"
+            "value" : "Inclinar el teléfono:\nVertical = 30 % de brillo\nPlano = 100 % de brillo"
           }
         },
         "es-419" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Inclina el teléfono:\nVertical = 10% de brillo,\nPlano = 100% de brillo"
+            "value" : "Inclinar el teléfono:\nVertical = 30 % de brillo\nPlano = 100 % de brillo"
           }
         },
         "es-US" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Inclina el teléfono:\nVertical = 10% de brillo,\nPlano = 100% de brillo"
+            "value" : "Inclinar el teléfono:\nVertical = 30 % de brillo\nPlano = 100 % de brillo"
           }
         },
         "fi" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Kallista puhelinta:\nPystyasento = 10% kirkkautta,\nVaakasuora = 100% kirkkautta"
+            "value" : "Kallista puhelinta:\nPysty = 30 % kirkkaus\nVaaka = 100 % kirkkaus"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Inclinez le téléphone :\nVertical = 10 % de luminosité,\nÀ plat = 100 % de luminosité"
+            "value" : "Incliner le téléphone :\nVertical = 30 % de luminosité\nÀ plat = 100 % de luminosité"
           }
         },
         "hr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Nagni telefon:\nUspravno = 10% svjetline,\nRavno = 100% svjetline"
+            "value" : "Nagnite telefon:\nOkomito = 30 % svjetline\nRavno = 100 % svjetline"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Inclina il telefono:\nVerticale = 10% di luminosità,\nPiatto = 100% di luminosità"
+            "value" : "Inclina il telefono:\nVerticale = 30 % luminosità\nPiatto = 100 % luminosità"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Kantel telefoon:\nVerticaal = 10% helderheid,\nPlat = 100% helderheid"
+            "value" : "Telefoon kantelen:\nVerticaal = 30% helderheid\nPlat = 100% helderheid"
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Pochyl telefon:\nPionowo = 10% jasności,\nPoziomo = 100% jasności"
+            "value" : "Przechyl telefon:\nPionowo = 30 % jasności\nPłasko = 100 % jasności"
           }
         },
         "pt-PT" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Incline o telefone:\nVertical = 10% de brilho,\nPlano = 100% de brilho"
+            "value" : "Inclinar o telemóvel:\nVertical = 30 % de brilho\nPlano = 100 % de brilho"
           }
         },
         "sv" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Luta telefonen:\nVertikal = 10% ljusstyrka,\nPlatt = 100% ljusstyrka"
+            "value" : "Luta telefonen:\nVertikal = 30 % ljusstyrka\nPlatt = 100 % ljusstyrka"
           }
         }
       }
@@ -1790,102 +1412,7 @@
           }
         }
       }
-    },
-    "X" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "da" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "X"
-          }
-        },
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "X"
-          }
-        },
-        "en-AU" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "X"
-          }
-        },
-        "en-GB" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "X"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "X"
-          }
-        },
-        "es-419" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "X"
-          }
-        },
-        "es-US" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "X"
-          }
-        },
-        "fi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "X"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "X"
-          }
-        },
-        "hr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "X"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "X"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "X"
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "X"
-          }
-        },
-        "pt-PT" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "X"
-          }
-        },
-        "sv" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "X"
-          }
-        }
-      }
     }
   },
-  "version" : "1.0"
+  "version" : "1.1"
 }

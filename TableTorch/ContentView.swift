@@ -50,7 +50,10 @@ struct ContentView: View {
                         Spacer(minLength: topSpacer)
 
                         VStack(spacing: controlSpacing) {
-                            BrightnessSliderView(brightness: $brightnessManager.currentBrightness)
+                            BrightnessSliderView(
+                                brightness: $brightnessManager.currentBrightness,
+                                isEnabled: !settings.isAngleBasedBrightnessActive
+                            )
                                 .frame(height: sliderHeight)
 
                             HStack(spacing: 16) {
