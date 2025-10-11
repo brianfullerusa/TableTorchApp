@@ -23,13 +23,13 @@ struct ContentView: View {
 
                 GeometryReader { proxy in
                     let totalHeight = proxy.size.height
-                    let bottomPadding = max(proxy.safeAreaInsets.bottom, 16)
+                    let bottomPadding = max(proxy.safeAreaInsets.bottom, 8)
                     let topSpacer = max(totalHeight * 0.01, 8)
                     let sliderHeight: CGFloat = 30
                     let buttonHeight: CGFloat = 44
                     let controlSpacing: CGFloat = 12
                     let controlsAllowance = topSpacer + controlSpacing + sliderHeight + buttonHeight + bottomPadding
-                    let proposedDisplayHeight = totalHeight * 0.83
+                    let proposedDisplayHeight = totalHeight * 0.92
                     let availableHeight = max(totalHeight - controlsAllowance, CGFloat(0))
                     let desiredHeight = max(proposedDisplayHeight, CGFloat(320))
                     let displayHeight: CGFloat = {
@@ -43,8 +43,8 @@ struct ContentView: View {
                         .frame(height: displayHeight)
                         .frame(maxWidth: .infinity)
                         .cornerRadius(24)
-                        .padding(.horizontal, 24)
-                        .padding(.top, 24)
+                        .padding(.horizontal, 12)
+                        .padding(.top, 12)
                         .shadow(color: Color.black.opacity(0.35), radius: 18, x: 0, y: 12)
 
                         Spacer(minLength: topSpacer)
