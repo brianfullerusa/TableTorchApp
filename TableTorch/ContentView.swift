@@ -14,9 +14,10 @@ struct ContentView: View {
     @StateObject private var settings = AppSettings()
     @StateObject private var motionManager = MotionManager()
     @State private var selectedIndex: Int = 0 //store an index for the selected color
+    @State private var brightnessDraft: CGFloat = UIScreen.main.brightness
 
     var body: some View {
-        NavigationView {
+        NavigationStack {
             ZStack {
                 Color.black
                     .edgesIgnoringSafeArea(.all)
@@ -51,7 +52,7 @@ struct ContentView: View {
 
                         VStack(spacing: controlSpacing) {
                             BrightnessSliderView(
-                                brightness: $brightnessManager.currentBrightness,
+                                brightness: $brightnessDraft,
                                 isEnabled: !settings.isAngleBasedBrightnessActive
                             )
                                 .frame(height: sliderHeight)
@@ -105,7 +106,6 @@ struct ContentView: View {
                 .toolbarColorScheme(.light, for: .navigationBar)
             }
         }
-        .navigationViewStyle(StackNavigationViewStyle())
         .onAppear {
             brightnessManager.beginManagingBrightness()
 
@@ -118,19 +118,18 @@ struct ContentView: View {
             self.selectedIndex = settings.lastSelectedColorIndex
 
             // Start motion if angle-based brightness is active
-            if settings.isAngleBasedBrightnessActive {
-                motionManager.startUpdates()
-            }
+            startMotionUpdatesIfNeeded()
             
             // Load the auto sleep settings
             UIApplication.shared.isIdleTimerDisabled = settings.preventScreenLock
+            brightnessDraft = brightnessManager.currentBrightness
         }
         // If user toggles angle-based brightness in settings
         .onChange(of: settings.isAngleBasedBrightnessActive) { newValue in
             if newValue {
-                motionManager.startUpdates()
+                startMotionUpdatesIfNeeded()
             } else {
-                motionManager.stopUpdates()
+                stopMotionUpdates()
             }
         }
         .onChange(of: settings.preventScreenLock) { newValue in
@@ -145,7 +144,8 @@ struct ContentView: View {
         // Restore brightness & stop motion on disappear
         .onDisappear {
             brightnessManager.endManagingBrightness()
-            motionManager.stopUpdates()
+            stopMotionUpdates()
+            settings.flushPendingSaves()
         }
         // Whenever selectedIndex changes, store it in settings
         .onChange(of: selectedIndex) { newValue in
@@ -155,11 +155,20 @@ struct ContentView: View {
             switch phase {
             case .active:
                 brightnessManager.beginManagingBrightness()
+                startMotionUpdatesIfNeeded()
             case .inactive, .background:
                 brightnessManager.endManagingBrightness()
+                stopMotionUpdates()
+                settings.flushPendingSaves()
             @unknown default:
                 break
             }
+        }
+        .onChange(of: brightnessManager.currentBrightness) { newValue in
+            updateBrightnessDraftIfNeeded(with: newValue)
+        }
+        .onChange(of: brightnessDraft) { newValue in
+            propagateBrightnessChange(ifNeeded: newValue)
         }
         .environmentObject(settings)
     }
@@ -176,4 +185,29 @@ private extension ContentView {
     var currentColor: Color {
         settings.selectedColors[safe: selectedIndex] ?? .white
     }
+
+    func startMotionUpdatesIfNeeded() {
+        if settings.isAngleBasedBrightnessActive {
+            motionManager.startUpdates()
+        }
+    }
+
+    func stopMotionUpdates() {
+        motionManager.stopUpdates()
+    }
+
+    func updateBrightnessDraftIfNeeded(with newValue: CGFloat) {
+        if abs(newValue - brightnessDraft) > brightnessSyncThreshold {
+            brightnessDraft = newValue
+        }
+    }
+
+    func propagateBrightnessChange(ifNeeded newValue: CGFloat) {
+        guard abs(brightnessManager.currentBrightness - newValue) > brightnessSyncThreshold else { return }
+        Task { @MainActor in
+            brightnessManager.currentBrightness = newValue
+        }
+    }
+
+    var brightnessSyncThreshold: CGFloat { 0.001 }
 }

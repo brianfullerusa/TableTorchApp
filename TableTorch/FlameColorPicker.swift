@@ -32,6 +32,8 @@ struct FlameColorPicker: View {
                     .opacity(0.1)//.opacity(0.01) // hide system color well
                     .allowsHitTesting(true)     // still tap-enabled
                     .contentShape(Rectangle())  // define a tappable shape
+                    .accessibilityLabel("Choose color for Torch \(label)")
+                    .accessibilityHint("Double-tap to select a color")
                 // The SF Symbol (flame) tinted by the bound color
                 
                 Image(systemName: "flame")
@@ -39,6 +41,7 @@ struct FlameColorPicker: View {
                     .scaledToFit()
                     .foregroundColor(color)
                     .frame(width: 24, height: 24)
+                    .accessibilityHidden(true)
                 
                 
             }

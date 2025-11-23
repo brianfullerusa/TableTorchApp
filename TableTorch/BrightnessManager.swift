@@ -8,6 +8,7 @@
 
 import SwiftUI
 
+@MainActor
 class BrightnessManager: ObservableObject {
     private var storedSystemBrightness: CGFloat?
     private var isManagingBrightness = false

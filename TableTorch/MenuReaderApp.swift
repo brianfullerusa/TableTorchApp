@@ -22,14 +22,6 @@ struct TableTorchApp: App {
                 // Main content
                 ContentView()
                     .environmentObject(brightnessManager)
-                    .onAppear {
-                        // Begin managing brightness at launch
-                        brightnessManager.beginManagingBrightness()
-                    }
-                    // When app goes out of foreground
-                    .onReceive(NotificationCenter.default.publisher(for: UIScene.willDeactivateNotification)) { _ in
-                        brightnessManager.endManagingBrightness()
-                    }
 
                 // Overlay the splash screen if needed
                 if showSplash {

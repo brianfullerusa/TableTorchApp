@@ -7,7 +7,20 @@
 
 import SwiftUI
 
-class AppSettings: ObservableObject {
+@MainActor
+final class AppSettings: ObservableObject {
+    static let defaultColors: [Color] = [
+        AppSettings.color(red: 255, green: 255, blue: 255),   // white
+        AppSettings.color(red: 255, green: 200, blue: 150),   // soft white
+        AppSettings.color(red: 152, green: 255, blue: 152),   // mint green
+        AppSettings.color(red: 70, green: 130, blue: 180),    // steel blue
+        AppSettings.color(red: 255, green: 0, blue: 0),       // red
+        AppSettings.color(red: 128, green: 0, blue: 0)        // dark red
+    ]
+
+    private var pendingSaveTask: Task<Void, Never>?
+    private let saveDebounceDelay: UInt64 = 200_000_000  // 0.2 seconds
+
     @Published var defaultBrightness: CGFloat {
         didSet { saveSettings() }
     }
@@ -50,14 +63,7 @@ class AppSettings: ObservableObject {
            let decoded = try? JSONDecoder().decode([CodableColor].self, from: data) {
             selectedColorsValue = decoded.map { $0.color }
         } else {
-            selectedColorsValue = [
-                Color(red: 255/255, green: 255/255, blue: 255/255), // white
-                Color(red: 255/255, green: 200/255, blue: 150/255), // soft white
-                Color(red: 152/255, green: 255/255, blue: 152/255), // mint green
-                Color(red: 70/255, green: 130/255, blue: 180/255), // steel blue
-                Color(red: 255/255, green: 0/255, blue: 0/255), // red
-                Color(red: 128/255, green: 0/255, blue: 0/255) // dark red
-            ]
+            selectedColorsValue = AppSettings.defaultColors
         }
 
         let isAngleBasedBrightnessActiveValue = defaults.bool(forKey: "isAngleBasedBrightnessActive")
@@ -81,7 +87,27 @@ class AppSettings: ObservableObject {
     }
 
     private func saveSettings() {
-        
+        scheduleSave()
+    }
+
+    func flushPendingSaves() {
+        pendingSaveTask?.cancel()
+        pendingSaveTask = nil
+        persistSettings()
+    }
+
+    private func scheduleSave() {
+        pendingSaveTask?.cancel()
+        pendingSaveTask = Task { [weak self] in
+            try? await Task.sleep(nanoseconds: saveDebounceDelay)
+            guard let self else { return }
+            await self.persistSettings()
+        }
+    }
+
+    private func persistSettings() {
+        pendingSaveTask = nil
+
         UserDefaults.standard.set(Double(defaultBrightness), forKey: "defaultBrightness")
         UserDefaults.standard.set(useDefaultBrightnessOnAppear, forKey: "useDefaultBrightnessOnAppear")
         UserDefaults.standard.set(preventScreenLock, forKey: "preventScreenLock")
@@ -95,6 +121,10 @@ class AppSettings: ObservableObject {
 
         // Save the selected index
         UserDefaults.standard.set(lastSelectedColorIndex, forKey: "lastSelectedColorIndex")
+    }
+
+    private static func color(red: Double, green: Double, blue: Double) -> Color {
+        Color(.sRGB, red: red / 255, green: green / 255, blue: blue / 255, opacity: 1.0)
     }
 }
 

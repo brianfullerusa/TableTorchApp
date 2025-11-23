@@ -41,15 +41,7 @@ struct SettingsView: View {
                     
                     // Add a "Restore Defaults" button here
                     Button("Restore Default Colors") {
-                        // This resets the colors to your original defaults
-                        //settings.selectedColors = [.white, .blue, .green, .red]
-                        settings.selectedColors = [(Color(red: 255/255, green: 255/255, blue: 255/255)), // white
-                                                   (Color(red: 255/255, green: 200/255, blue: 150/255)), //soft white
-                                                   (Color(red: 152/255, green: 255/255, blue: 152/255)), //mint green
-                                                   (Color(red: 70/255, green: 130/255, blue: 180/255)), //steel blue
-                                                   //(Color(red: 255/255, green: 100/255, blue: 0/255)), //orange
-                                                   (Color(red: 255/255, green: 0/255, blue: 0/255)), //red
-                                                   (Color(red: 128/255, green: 0/255, blue: 0/255))] //dark red
+                        settings.selectedColors = AppSettings.defaultColors
                     }
                     .foregroundColor(.blue)
                 }
@@ -110,6 +102,5 @@ struct SettingsView_Previews: PreviewProvider {
             //.environment(\.locale, .init(identifier: "hrv"))
     }
 }
-
 
 
