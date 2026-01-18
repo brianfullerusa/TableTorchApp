@@ -10,6 +10,11 @@ import SwiftUI
 
 struct SettingsView: View {
     @ObservedObject var settings: AppSettings
+    @EnvironmentObject var entitlements: EntitlementManager
+    @EnvironmentObject var storeKit: StoreKitManager
+
+    @State private var isProcessingPurchase = false
+    @State private var purchaseError: String?
 
     // For the two-column layout of torch colors
     private let gridColumns = [
@@ -88,19 +93,108 @@ struct SettingsView: View {
                         .font(.footnote)
                 }
                 .listRowBackground(Color.black)
+
+                Section(header:
+                    Text("Access & Purchases")
+                        .font(.title2)
+                        .fontWeight(.semibold)
+                        .foregroundColor(.orange)
+                ) {
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text(accessStatusLabel)
+                            .foregroundColor(.white)
+
+                        if let remainingDays = entitlements.trialDaysRemaining(), entitlements.accessLevel == .trialActive {
+                            Text("Trial days left: \(remainingDays)")
+                                .foregroundColor(.white.opacity(0.8))
+                                .font(.subheadline)
+                        }
+                    }
+                    .listRowBackground(Color.black)
+
+                    if entitlements.accessLevel == .locked || entitlements.accessLevel == .trialActive {
+                        Button(action: { Task { await attemptPurchase() } }) {
+                            Text("Unlock for \(priceLabel)")
+                                .fontWeight(.semibold)
+                        }
+                        .disabled(isProcessingPurchase)
+                        .foregroundColor(.blue)
+                    }
+
+                    Button(action: { Task { await attemptRestore() } }) {
+                        Text("Restore Purchases")
+                    }
+                    .disabled(isProcessingPurchase)
+                    .foregroundColor(.blue)
+
+                    if let purchaseError {
+                        Text(purchaseError)
+                            .foregroundColor(.red)
+                            .font(.footnote)
+                    }
+                }
+                .listRowBackground(Color.black)
             }
             .scrollContentBackground(.hidden) // iOS 16+ to remove default form background
             .navigationBarTitle("Settings", displayMode: .inline)
             .foregroundColor(.white)
+            .task {
+                if storeKit.fullUnlockProduct == nil {
+                    await storeKit.loadProducts()
+                }
+            }
         }
+    }
+}
+
+private extension SettingsView {
+    var priceLabel: String {
+        storeKit.fullUnlockProduct?.displayPrice ?? PurchaseConfiguration.fallbackDisplayPrice
+    }
+
+    var accessStatusLabel: String {
+        switch entitlements.accessLevel {
+        case .unlockedGrandfathered:
+            return "Access: Grandfathered (thank you for your early support!)"
+        case .unlockedPaid:
+            return "Access: Unlocked via purchase"
+        case .trialActive:
+            return "Access: Trial active"
+        case .locked:
+            return "Access: Locked"
+        }
+    }
+
+    func attemptPurchase() async {
+        isProcessingPurchase = true
+        purchaseError = nil
+        let success = await storeKit.purchaseFullUnlock()
+        if success {
+            await entitlements.refreshEntitlements()
+        } else if let message = storeKit.lastErrorDescription {
+            purchaseError = message
+        }
+        isProcessingPurchase = false
+    }
+
+    func attemptRestore() async {
+        isProcessingPurchase = true
+        purchaseError = nil
+        let restored = await storeKit.restorePurchases()
+        if restored {
+            await entitlements.refreshEntitlements()
+        } else if let message = storeKit.lastErrorDescription {
+            purchaseError = message
+        }
+        isProcessingPurchase = false
     }
 }
 
 struct SettingsView_Previews: PreviewProvider {
     static var previews: some View {
         SettingsView(settings: AppSettings())
+            .environmentObject(EntitlementManager())
+            .environmentObject(StoreKitManager())
             //.environment(\.locale, .init(identifier: "hrv"))
     }
 }
-
-

@@ -99,9 +99,9 @@ final class AppSettings: ObservableObject {
     private func scheduleSave() {
         pendingSaveTask?.cancel()
         pendingSaveTask = Task { [weak self] in
-            try? await Task.sleep(nanoseconds: saveDebounceDelay)
             guard let self else { return }
-            await self.persistSettings()
+            try? await Task.sleep(nanoseconds: self.saveDebounceDelay)
+            self.persistSettings()
         }
     }
 

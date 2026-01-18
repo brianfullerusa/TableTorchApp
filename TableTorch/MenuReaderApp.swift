@@ -12,6 +12,8 @@ import UIKit
 @main
 struct TableTorchApp: App {
     @StateObject private var brightnessManager = BrightnessManager()
+    @StateObject private var entitlements = EntitlementManager()
+    @StateObject private var storeKitManager = StoreKitManager()
 
     // Control splash visibility
     @State private var showSplash = true
@@ -19,9 +21,11 @@ struct TableTorchApp: App {
     var body: some Scene {
         WindowGroup {
             ZStack {
-                // Main content
-                ContentView()
+                // Main content (paywall or full app)
+                RootView()
                     .environmentObject(brightnessManager)
+                    .environmentObject(entitlements)
+                    .environmentObject(storeKitManager)
 
                 // Overlay the splash screen if needed
                 if showSplash {

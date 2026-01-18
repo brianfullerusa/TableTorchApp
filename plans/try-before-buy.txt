@@ -1,0 +1,442 @@
+
+Here’s an end-to-end plan you can follow to move your current $0.99 paid app → free download + one-time IAP, while grandfathering all existing buyers and giving new users a trial.
+
+I’ll assume:
+	•	You’re okay targeting iOS 15+ (StoreKit 2).
+	•	You’ll use a non-consumable IAP called something like full_unlock. ￼
+	•	You’ll switch business model at version 2.0 (adapt the number if needed).
+
+⸻
+
+0. High-level architecture
+
+You’ll have three ways to be “unlocked”:
+	1.	Grandfathered – user bought the app when it was paid up front.
+	2.	Non-consumable IAP – user buys full_unlock once.
+	3.	Trial – new free users get limited time or features before needing the IAP.
+
+Your code will revolve around an Entitlement Manager that tells the rest of the app:
+
+locked / trialActive / unlockedPaid / unlockedGrandfathered
+
+Everything in the UI checks that single source of truth.
+
+⸻
+
+1. Decide details up front
+
+1.1. Version threshold
+
+Pick the version where the new model starts, e.g.:
+	•	Current version: 1.5
+	•	New version: 2.0 → this is the first freemium build
+
+You’ll compare AppTransaction.originalAppVersion against this value to decide if a user is grandfathered. ￼
+
+Important: Ship version 2.0 while the app is still paid, then change the price to Free after 2.0 is approved. That guarantees everyone with originalAppVersion < 2.0 actually paid.
+
+1.2. Trial style
+
+Choose one:
+	•	Time-limited trial – e.g. 7 days full access, then lock.
+	•	Feature-limited trial – always free but only some features available.
+
+Time-limited feels closest to a “trial”; feature-limited is simpler to reason about. Your entitlement manager can handle either.
+
+1.3. Product details
+
+For the IAP:
+	•	Type: Non-Consumable
+	•	Product ID (example): com.yourcompany.yourapp.full_unlock
+	•	Price: $0.99 (or whatever matches your previous price)
+	•	Family Sharing: On if you want it (recommended). ￼
+
+⸻
+
+2. Configure the non-consumable IAP in App Store Connect
+	1.	Go to App Store Connect → My Apps → [Your App].
+	2.	Under Monetization → In-App Purchases → “+”. ￼
+	3.	Choose Non-Consumable.
+	4.	Enter:
+	•	Reference Name: Full Unlock (internal).
+	•	Product ID: com.yourcompany.yourapp.full_unlock.
+	•	Price: Tier that approximates $0.99.
+	5.	Add localizations (Display Name + Description).
+	6.	Add a screenshot showing what unlocks.
+	7.	(Optional) Enable Family Sharing.
+	8.	Set the IAP to Ready to Submit, then when you upload your new app version, include this IAP in that version.
+
+⸻
+
+3. Add an Entitlement Manager in your app
+
+Create a central place that knows the user’s status.
+
+3.1. Entitlement model
+
+enum AccessLevel {
+    case locked
+    case trialActive
+    case unlockedGrandfathered
+    case unlockedPaid // via IAP
+}
+
+@MainActor
+final class EntitlementManager: ObservableObject {
+    @Published private(set) var accessLevel: AccessLevel = .locked
+
+    // Config
+    private let newBusinessModelVersion = "2.0"
+    private let trialDurationDays = 7
+
+    // Keys for UserDefaults (or better: Keychain/iCloud for anti-abuse)
+    private let trialStartDateKey = "trialStartDate"
+
+    func refreshEntitlements() async {
+        // 1. Grandfather check
+        if await isGrandfatheredUser() {
+            accessLevel = .unlockedGrandfathered
+            return
+        }
+
+        // 2. IAP check
+        if await hasNonConsumableUnlock() {
+            accessLevel = .unlockedPaid
+            return
+        }
+
+        // 3. Trial check
+        if isTrialActive() {
+            accessLevel = .trialActive
+        } else {
+            accessLevel = .locked
+        }
+    }
+}
+
+The rest of the app just reads accessLevel and shows/hides features accordingly.
+
+⸻
+
+4. Implement grandfathering with AppTransaction
+
+Apple’s official guidance for model changes is to use AppTransaction.originalAppVersion to see when the user first purchased/downloaded the app. ￼
+
+4.1. Grandfather check implementation
+
+import StoreKit
+
+extension EntitlementManager {
+    private func isGrandfatheredUser() async -> Bool {
+        do {
+            let result = try await AppTransaction.shared
+            guard case .verified(let appTransaction) = result else {
+                return false
+            }
+
+            let original = appTransaction.originalAppVersion
+
+            // Simple string comparison can be unreliable; it's safer to:
+            // 1. Log the value you see for an old "paid" user in TestFlight
+            // 2. Compare against that known value exactly or numerically.
+
+            // Here’s a simple semantic version comparison helper:
+            return compareVersion(original, isLessThan: newBusinessModelVersion)
+        } catch {
+            // Receipt might not be available, etc.
+            return false
+        }
+    }
+
+    private func compareVersion(_ lhs: String, isLessThan rhs: String) -> Bool {
+        let lhsParts = lhs.split(separator: ".").compactMap { Int($0) }
+        let rhsParts = rhs.split(separator: ".").compactMap { Int($0) }
+        let count = max(lhsParts.count, rhsParts.count)
+
+        for i in 0..<count {
+            let l = i < lhsParts.count ? lhsParts[i] : 0
+            let r = i < rhsParts.count ? rhsParts[i] : 0
+            if l < r { return true }
+            if l > r { return false }
+        }
+        return false
+    }
+}
+
+Practical tip: In a TestFlight build installed while the app is still paid, log originalAppVersion so you can confirm exactly what string you get back and tweak newBusinessModelVersion if needed. ￼
+
+⸻
+
+5. Implement StoreKit 2 for the non-consumable IAP
+
+5.1. Product loading
+
+@MainActor
+final class StoreKitManager: ObservableObject {
+    @Published var fullUnlockProduct: Product?
+
+    let fullUnlockProductId = "com.yourcompany.yourapp.full_unlock"
+
+    func loadProducts() async {
+        do {
+            let products = try await Product.products(for: [fullUnlockProductId])
+            fullUnlockProduct = products.first
+        } catch {
+            print("Failed to load products: \(error)")
+        }
+    }
+}
+
+5.2. Purchase + verification
+
+extension StoreKitManager {
+    func purchaseFullUnlock() async throws -> Bool {
+        guard let product = fullUnlockProduct else { return false }
+
+        let result = try await product.purchase()
+
+        switch result {
+        case .success(let verificationResult):
+            if case .verified(let transaction) = verificationResult {
+                // Non-consumables unlock permanently
+                await transaction.finish()
+                return true
+            } else {
+                // Unverified
+                return false
+            }
+
+        case .userCancelled, .pending:
+            return false
+
+        @unknown default:
+            return false
+        }
+    }
+}
+
+5.3. Restore purchases
+
+Apple expects a “Restore Purchases” button for non-consumables. ￼
+
+extension StoreKitManager {
+    func restorePurchases() async -> Bool {
+        var restored = false
+
+        for await result in Transaction.currentEntitlements {
+            if case .verified(let transaction) = result,
+               transaction.productID == fullUnlockProductId {
+                restored = true
+            }
+        }
+
+        return restored
+    }
+}
+
+5.4. Tie StoreKit → Entitlements
+
+In some central place (e.g. App or a root coordinator):
+
+@MainActor
+func updateEntitlementsAfterPurchase(
+    storeKit: StoreKitManager,
+    entitlements: EntitlementManager
+) async {
+    let success = try? await storeKit.purchaseFullUnlock()
+    if success == true {
+        await entitlements.refreshEntitlements()
+    }
+}
+
+And similar after restorePurchases().
+
+⸻
+
+6. Implement the trial logic
+
+Let’s assume a 7-day full-access trial for new users who aren’t grandfathered and haven’t bought the IAP.
+
+6.1. Start the trial
+
+In EntitlementManager.refreshEntitlements():
+	•	If not grandfathered and no IAP:
+	•	If no trialStartDate exists → set it to Date() and treat trial as active.
+	•	If it exists → check if it’s still within trialDurationDays.
+
+extension EntitlementManager {
+
+    private func isTrialActive() -> Bool {
+        let defaults = UserDefaults.standard
+
+        if let start = defaults.object(forKey: trialStartDateKey) as? Date {
+            let end = Calendar.current.date(byAdding: .day, value: trialDurationDays, to: start)!
+            return Date() < end
+        } else {
+            // First time: start trial
+            defaults.set(Date(), forKey: trialStartDateKey)
+            return true
+        }
+    }
+}
+
+Abuse considerations:
+	•	Deleting & reinstalling resets UserDefaults. If you care, you can:
+	•	Store the trial start in iCloud key-value store.
+	•	Or keep it on your server, tied to an account.
+	•	Apple is generally okay with simple local logic for a small one-time IAP trial, especially at $0.99, but iCloud/Keychain is more robust.
+
+⸻
+
+7. Wire entitlements into UI
+
+7.1. On launch
+
+In your App or main view model:
+
+@main
+struct YourApp: App {
+    @StateObject private var entitlements = EntitlementManager()
+    @StateObject private var storeKit = StoreKitManager()
+
+    var body: some Scene {
+        WindowGroup {
+            RootView()
+                .environmentObject(entitlements)
+                .environmentObject(storeKit)
+                .task {
+                    await storeKit.loadProducts()
+                    await entitlements.refreshEntitlements()
+                }
+        }
+    }
+}
+
+7.2. Paywall / gating
+
+Example of gating a feature:
+
+struct FeatureView: View {
+    @EnvironmentObject var entitlements: EntitlementManager
+
+    var body: some View {
+        switch entitlements.accessLevel {
+        case .unlockedGrandfathered, .unlockedPaid, .trialActive:
+            RealFeatureView()
+        case .locked:
+            PaywallView()
+        }
+    }
+}
+
+7.3. Paywall view
+
+Give a clear explanation and restore button:
+
+struct PaywallView: View {
+    @EnvironmentObject var entitlements: EntitlementManager
+    @EnvironmentObject var storeKit: StoreKitManager
+    @State private var isPurchasing = false
+    @State private var errorMessage: String?
+
+    var body: some View {
+        VStack(spacing: 16) {
+            Text("Unlock Full Version")
+                .font(.title)
+            Text("Get unlimited access to all features with a one-time purchase.")
+
+            Button("Unlock for $0.99") {
+                Task {
+                    isPurchasing = true
+                    defer { isPurchasing = false }
+                    do {
+                        let success = try await storeKit.purchaseFullUnlock()
+                        if success {
+                            await entitlements.refreshEntitlements()
+                        }
+                    } catch {
+                        errorMessage = error.localizedDescription
+                    }
+                }
+            }
+            .disabled(isPurchasing)
+
+            Button("Restore Purchases") {
+                Task {
+                    let restored = await storeKit.restorePurchases()
+                    if restored {
+                        await entitlements.refreshEntitlements()
+                    }
+                }
+            }
+
+            if let errorMessage {
+                Text(errorMessage).foregroundColor(.red)
+            }
+        }
+        .padding()
+    }
+}
+
+
+⸻
+
+8. Testing plan
+
+8.1. Local StoreKit testing
+
+Use StoreKit Configuration files in Xcode and run the app in the simulator. ￼
+	•	Create a .storekit file with:
+	•	Non-consumable product full_unlock.
+	•	Test flows:
+	•	Load products.
+	•	Purchase success, cancel, pending.
+	•	Restore purchases.
+
+8.2. TestFlight & sandbox Apple IDs
+
+Upload a 2.0 build (still as a paid app).
+
+Test at least these scenarios:
+	1.	Existing buyer (grandfathered):
+	•	Install via TestFlight on a device where that Apple ID has already bought the app.
+	•	Confirm originalAppVersion is < 2.0 and that you see full access without paywall.
+	2.	New user (no prior purchase, new Apple ID):
+	•	No prior purchase; should see trial mode, then paywall after trial expires.
+	•	Purchase IAP → app becomes permanently unlocked.
+	3.	Restore purchases:
+	•	Buy IAP on one device, install app on second device with same Apple ID, tap “Restore Purchases” → unlock.
+	4.	Delete & reinstall:
+	•	Confirm your trial behavior matches what you’re comfortable with.
+
+8.3. Log the AppTransaction values
+
+For a while, log:
+	•	AppTransaction.originalAppVersion
+	•	AppTransaction.originalPurchaseDate
+
+to verify the threshold logic behaves as expected in the wild. ￼
+
+⸻
+
+9. Release sequence & App Review notes
+	1.	Implement & test everything above.
+	2.	Upload version 2.0 to App Store Connect while the app is still $0.99 paid.
+	3.	In the version’s “App Review Information” field, add a short note:
+“This update changes the app from paid-up-front to free with a non-consumable in-app purchase.
+Existing customers are granted full access using AppTransaction.originalAppVersion; they never have to pay again. New users can try the app and then unlock via the IAP.”
+	4.	Once 2.0 is approved, go to Pricing and Availability:
+	•	Change the app price from $0.99 → Free.
+	5.	Release 2.0.
+
+From that point:
+	•	Anyone who already paid keeps their lifetime full access (enforced via AppTransaction).
+	•	New users download for free, get a trial, then a one-time $0.99 unlock if they like it.
+
+⸻
+
+10. Next steps
+
+If you want, I can:
+	•	Help you adapt this plan to your actual project structure (UIKit vs SwiftUI, MVVM, etc.).
+	•	Draft the exact review notes and in-app wording (onboarding, paywall copy, “thank you, early supporter” banner for grandfathered users).
