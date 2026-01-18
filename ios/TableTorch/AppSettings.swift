@@ -99,9 +99,9 @@ final class AppSettings: ObservableObject {
     private func scheduleSave() {
         pendingSaveTask?.cancel()
         pendingSaveTask = Task { [weak self] in
-            try? await Task.sleep(nanoseconds: saveDebounceDelay)
+            try? await Task.sleep(nanoseconds: self?.saveDebounceDelay ?? 0)
             guard let self else { return }
-            await self.persistSettings()
+            self.persistSettings()
         }
     }
 
@@ -149,3 +149,4 @@ struct CodableColor: Codable {
         Color(.sRGB, red: red, green: green, blue: blue, opacity: alpha)
     }
 }
+
