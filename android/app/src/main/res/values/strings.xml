@@ -1,3 +1,54 @@
 <resources>
     <string name="app_name">TableTorch</string>
+
+    <!-- Main Screen -->
+    <string name="title_table_torch">Table Torch</string>
+    <string name="brightness">Brightness</string>
+    <string name="settings">Settings</string>
+    <string name="color_button_description">Color %1$d</string>
+    <string name="color_button_selected">Color %1$d, selected</string>
+
+    <!-- Splash Screen -->
+    <string name="splash_title">TABLE TORCH</string>
+    <string name="splash_logo_description">TableTorch Logo</string>
+    <string name="tap_to_skip">Tap to skip splash screen</string>
+
+    <!-- Settings Screen -->
+    <string name="settings_title">Settings</string>
+    <string name="back">Back</string>
+
+    <!-- Settings: Torch Colors Section -->
+    <string name="section_torch_colors">Torch Colors</string>
+    <string name="section_torch_colors_subtitle">Tap a flame to change its color</string>
+    <string name="torch_label">Torch %1$d</string>
+    <string name="restore_default_colors">Restore Default Colors</string>
+
+    <!-- Settings: Brightness Section -->
+    <string name="section_brightness_settings">Brightness Settings</string>
+    <string name="section_brightness_settings_subtitle">Control brightness behavior</string>
+    <string name="default_brightness">Default Brightness</string>
+    <string name="use_default_brightness_on_launch">Use Default Brightness on Launch</string>
+    <string name="prevent_screen_lock">Prevent Screen Lock</string>
+    <string name="prevent_screen_lock_description">When enabled, Table Torch will keep the screen on and prevent auto-lock.</string>
+
+    <!-- Settings: Tilt Section -->
+    <string name="section_tilt_control">Tilt Brightness Control</string>
+    <string name="section_tilt_control_subtitle">Adjust brightness by tilting your device</string>
+    <string name="enable_tilt_brightness">Enable Tilt Brightness Control</string>
+    <string name="tilt_description">Tilt phone: Vertical=30% brightness, Flat=100% brightness</string>
+
+    <!-- Color Picker -->
+    <string name="select_color">Select Color</string>
+    <string name="select">Select</string>
+    <string name="cancel">Cancel</string>
+    <string name="current_color">Current</string>
+    <string name="new_color">New</string>
+    <string name="tab_grid">Grid</string>
+    <string name="tab_spectrum">Spectrum</string>
+    <string name="tab_sliders">Sliders</string>
+    <string name="red">Red</string>
+    <string name="green">Green</string>
+    <string name="blue">Blue</string>
+    <string name="hex_format">Hex: %1$s</string>
+    <string name="select_color_description">Select %1$s color</string>
 </resources>

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <!-- Sun/Brightness icon - outlined style matching Material Design WbSunny -->
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M6.76,4.84L4.96,3.05L3.55,4.46L5.34,6.25L6.76,4.84ZM1,10.5L4,10.5L4,12.5L1,12.5L1,10.5ZM11,0.55L11,3.5L13,3.5L13,0.55L11,0.55ZM19.04,3.045L17.62,4.465L19.41,6.255L20.83,4.835L19.04,3.045ZM17.24,18.16L19.03,19.96L20.44,18.55L18.64,16.76L17.24,18.16ZM20,10.5L20,12.5L23,12.5L23,10.5L20,10.5ZM12,5.5C8.69,5.5 6,8.19 6,11.5C6,14.81 8.69,17.5 12,17.5C15.31,17.5 18,14.81 18,11.5C18,8.19 15.31,5.5 12,5.5ZM12,15.5C9.79,15.5 8,13.71 8,11.5C8,9.29 9.79,7.5 12,7.5C14.21,7.5 16,9.29 16,11.5C16,13.71 14.21,15.5 12,15.5ZM11,19.5L11,22.45L13,22.45L13,19.5L11,19.5ZM3.55,18.54L4.96,19.95L6.76,18.15L5.35,16.74L3.55,18.54Z"/>
+</vector>

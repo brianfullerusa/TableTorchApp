@@ -13,3 +13,15 @@
 .externalNativeBuild
 .cxx
 local.properties
+
+# Signing and secrets
+*.keystore
+*.jks
+keystore.properties
+signing.properties
+secrets.properties
+google-services.json
+
+# Generated files
+app/release/
+app/debug/

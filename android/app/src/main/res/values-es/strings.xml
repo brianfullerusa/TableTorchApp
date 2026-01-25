@@ -1,0 +1,53 @@
+<resources>
+    <string name="app_name">TableTorch</string>
+
+    <!-- Main Screen -->
+    <string name="title_table_torch">Table Torch</string>
+    <string name="brightness">Brillo</string>
+    <string name="settings">Ajustes</string>
+    <string name="color_button_description">Color %1$d</string>
+    <string name="color_button_selected">Color %1$d, seleccionado</string>
+
+    <!-- Splash Screen -->
+    <string name="splash_title">TABLE TORCH</string>
+    <string name="splash_logo_description">Logo de TableTorch</string>
+
+    <!-- Settings Screen -->
+    <string name="settings_title">Ajustes</string>
+    <string name="back">Atrás</string>
+
+    <!-- Settings: Torch Colors Section -->
+    <string name="section_torch_colors">Colores de Antorcha</string>
+    <string name="section_torch_colors_subtitle">Toca una llama para cambiar su color</string>
+    <string name="torch_label">Antorcha %1$d</string>
+    <string name="restore_default_colors">Restaurar Colores Predeterminados</string>
+
+    <!-- Settings: Brightness Section -->
+    <string name="section_brightness_settings">Ajustes de Brillo</string>
+    <string name="section_brightness_settings_subtitle">Controla el comportamiento del brillo</string>
+    <string name="default_brightness">Brillo Predeterminado</string>
+    <string name="use_default_brightness_on_launch">Usar Brillo Predeterminado al Iniciar</string>
+    <string name="prevent_screen_lock">Evitar Bloqueo de Pantalla</string>
+    <string name="prevent_screen_lock_description">Cuando está activado, Table Torch mantendrá la pantalla encendida y evitará el bloqueo automático.</string>
+
+    <!-- Settings: Tilt Section -->
+    <string name="section_tilt_control">Control de Brillo por Inclinación</string>
+    <string name="section_tilt_control_subtitle">Ajusta el brillo inclinando tu dispositivo</string>
+    <string name="enable_tilt_brightness">Activar Control de Brillo por Inclinación</string>
+    <string name="tilt_description">Inclina el teléfono: Vertical=30% brillo, Plano=100% brillo</string>
+
+    <!-- Color Picker -->
+    <string name="select_color">Seleccionar Color</string>
+    <string name="select">Seleccionar</string>
+    <string name="cancel">Cancelar</string>
+    <string name="current_color">Actual</string>
+    <string name="new_color">Nuevo</string>
+    <string name="tab_grid">Cuadrícula</string>
+    <string name="tab_spectrum">Espectro</string>
+    <string name="tab_sliders">Deslizadores</string>
+    <string name="red">Rojo</string>
+    <string name="green">Verde</string>
+    <string name="blue">Azul</string>
+    <string name="hex_format">Hex: %1$s</string>
+    <string name="select_color_description">Seleccionar color de %1$s</string>
+</resources>

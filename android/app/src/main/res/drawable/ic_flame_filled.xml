@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <!-- Flame icon - solid filled -->
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M12,22C8.69,22 6,19.31 6,16C6,12.5 9,8 12,3C15,8 18,12.5 18,16C18,19.31 15.31,22 12,22ZM12,5.5C10,8.5 8,12 8,15C8,18.03 9.79,20 12,20C14.21,20 16,18.03 16,15C16,12 14,8.5 12,5.5Z"/>
+    <!-- Inner flame -->
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M12,19C10.34,19 9,17.66 9,16C9,13.5 11,10 12,8C13,10 15,13.5 15,16C15,17.66 13.66,19 12,19Z"/>
+</vector>

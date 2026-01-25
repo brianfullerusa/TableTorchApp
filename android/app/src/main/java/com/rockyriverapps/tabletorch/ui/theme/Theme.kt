@@ -1,53 +1,89 @@
 package com.rockyriverapps.tabletorch.ui.theme
 
-import android.app.Activity
-import android.os.Build
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
-import androidx.compose.material3.dynamicDarkColorScheme
-import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.runtime.SideEffect
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalView
+import androidx.core.view.WindowCompat
+import com.rockyriverapps.tabletorch.util.findActivity
 
-private val DarkColorScheme = darkColorScheme(
-    primary = Purple80,
-    secondary = PurpleGrey80,
-    tertiary = Pink80
+private val DarkTableTorchColorScheme = darkColorScheme(
+    primary = TorchOrange,
+    onPrimary = Color.Black,
+    primaryContainer = TorchOrangeContainer,
+    onPrimaryContainer = TorchOrange,
+    secondary = TorchSecondary,
+    onSecondary = Color.Black,
+    secondaryContainer = TorchSecondaryContainer,
+    onSecondaryContainer = TorchSecondary,
+    tertiary = TorchSecondary,
+    onTertiary = Color.Black,
+    tertiaryContainer = TorchSecondaryContainer,
+    onTertiaryContainer = TorchSecondary,
+    error = TorchError,
+    onError = Color.Black,
+    errorContainer = TorchErrorContainer,
+    onErrorContainer = TorchError,
+    background = TorchBackground,
+    onBackground = TorchOnSurface,
+    surface = TorchSurface,
+    onSurface = TorchOnSurface,
+    surfaceVariant = TorchSurface,
+    onSurfaceVariant = TorchOnSurface,
+    outline = TorchOutline,
+    outlineVariant = TorchOutlineVariant
 )
 
-private val LightColorScheme = lightColorScheme(
-    primary = Purple40,
-    secondary = PurpleGrey40,
-    tertiary = Pink40
-
-    /* Other default colors to override
-    background = Color(0xFFFFFBFE),
-    surface = Color(0xFFFFFBFE),
+private val LightTableTorchColorScheme = lightColorScheme(
+    primary = TorchOrangeLight,
     onPrimary = Color.White,
+    primaryContainer = TorchSecondaryContainerLight,
+    onPrimaryContainer = TorchOrangeLight,
+    secondary = TorchSecondaryLight,
     onSecondary = Color.White,
+    secondaryContainer = TorchSecondaryContainerLight,
+    onSecondaryContainer = TorchSecondaryLight,
+    tertiary = TorchSecondaryLight,
     onTertiary = Color.White,
-    onBackground = Color(0xFF1C1B1F),
-    onSurface = Color(0xFF1C1B1F),
-    */
+    tertiaryContainer = TorchSecondaryContainerLight,
+    onTertiaryContainer = TorchSecondaryLight,
+    error = TorchErrorLight,
+    onError = Color.White,
+    errorContainer = TorchErrorContainerLight,
+    onErrorContainer = TorchErrorLight,
+    background = TorchBackgroundLight,
+    onBackground = TorchOnSurfaceLight,
+    surface = TorchSurfaceLight,
+    onSurface = TorchOnSurfaceLight,
+    surfaceVariant = TorchSurfaceLight,
+    onSurfaceVariant = TorchOnSurfaceLight,
+    outline = TorchOutlineLight,
+    outlineVariant = TorchOutlineVariantLight
 )
 
 @Composable
 fun TableTorchTheme(
-    darkTheme: Boolean = isSystemInDarkTheme(),
-    // Dynamic color is available on Android 12+
-    dynamicColor: Boolean = true,
+    darkTheme: Boolean = true,
     content: @Composable () -> Unit
 ) {
-    val colorScheme = when {
-        dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
-            val context = LocalContext.current
-            if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
-        }
+    val colorScheme = if (darkTheme) DarkTableTorchColorScheme else LightTableTorchColorScheme
+    val view = LocalView.current
 
-        darkTheme -> DarkColorScheme
-        else -> LightColorScheme
+    if (!view.isInEditMode) {
+        SideEffect {
+            val activity = view.context.findActivity()
+            if (activity != null) {
+                val window = activity.window
+                val insetsController = WindowCompat.getInsetsController(window, view)
+
+                // Use modern edge-to-edge approach - adjust status/nav bar appearance based on theme
+                insetsController.isAppearanceLightStatusBars = !darkTheme
+                insetsController.isAppearanceLightNavigationBars = !darkTheme
+            }
+        }
     }
 
     MaterialTheme(

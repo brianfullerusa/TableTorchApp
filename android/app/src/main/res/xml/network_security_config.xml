@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Network Security Configuration for TableTorch.
+    Enforces HTTPS for all connections and disables cleartext traffic.
+    This is a security best practice even for apps that don't use networking.
+-->
+<network-security-config>
+    <!-- Default configuration for all domains -->
+    <base-config cleartextTrafficPermitted="false">
+        <trust-anchors>
+            <!-- Trust system certificates -->
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+</network-security-config>

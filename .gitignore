@@ -72,3 +72,8 @@ android/.cxx/
 .DS_Store
 *.swp
 *.tmp
+
+# ===================
+# Project-specific
+# ===================
+shared/
