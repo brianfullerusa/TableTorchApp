@@ -18,6 +18,15 @@ final class AppSettings: ObservableObject {
         AppSettings.color(red: 128, green: 0, blue: 0)        // dark red
     ]
 
+    static let lowLightColors: [Color] = [
+        AppSettings.color(red: 180, green: 0, blue: 0),       // deep red — night vision
+        AppSettings.color(red: 200, green: 50, blue: 0),      // warm red — dark reading
+        AppSettings.color(red: 255, green: 147, blue: 41),    // amber — warm night
+        AppSettings.color(red: 255, green: 180, blue: 107),   // warm white — candlelight
+        AppSettings.color(red: 255, green: 200, blue: 150),   // soft white — reading light
+        AppSettings.color(red: 255, green: 255, blue: 255)    // white — bright reading
+    ]
+
     private var pendingSaveTask: Task<Void, Never>?
     private let saveDebounceDelay: UInt64 = 200_000_000  // 0.2 seconds
 
@@ -42,6 +51,23 @@ final class AppSettings: ObservableObject {
         didSet { saveSettings() }
     }
 
+    // New properties for redesign
+    @Published var hasCompletedOnboarding: Bool {
+        didSet { saveSettings() }
+    }
+    @Published var enableBreathingAnimation: Bool {
+        didSet { saveSettings() }
+    }
+    @Published var enableEmberParticles: Bool {
+        didSet { saveSettings() }
+    }
+    @Published var showQuickColorBar: Bool {
+        didSet { saveSettings() }
+    }
+    @Published var alwaysShowBrightnessIndicator: Bool {
+        didSet { saveSettings() }
+    }
+
     init() {
         let defaults = UserDefaults.standard
 
@@ -50,7 +76,12 @@ final class AppSettings: ObservableObject {
             "defaultBrightness": 1.0,
             "useDefaultBrightnessOnAppear": true,
             "preventScreenLock": true,
-            "isAngleBasedBrightnessActive": true
+            "isAngleBasedBrightnessActive": true,
+            "hasCompletedOnboarding": false,
+            "enableBreathingAnimation": true,
+            "enableEmberParticles": true,
+            "showQuickColorBar": true,
+            "alwaysShowBrightnessIndicator": true
         ])
 
         // Compute values locally first (avoid touching self before full init)
@@ -77,6 +108,13 @@ final class AppSettings: ObservableObject {
             lastSelectedColorIndexValue = selectedColorsValue.indices.contains(storedIndex) ? storedIndex : 0
         }
 
+        // New redesign settings
+        let hasCompletedOnboardingValue = defaults.bool(forKey: "hasCompletedOnboarding")
+        let enableBreathingAnimationValue = defaults.bool(forKey: "enableBreathingAnimation")
+        let enableEmberParticlesValue = defaults.bool(forKey: "enableEmberParticles")
+        let showQuickColorBarValue = defaults.bool(forKey: "showQuickColorBar")
+        let alwaysShowBrightnessIndicatorValue = defaults.bool(forKey: "alwaysShowBrightnessIndicator")
+
         // Now assign to stored properties (safe to use self)
         self.defaultBrightness = defaultBrightnessValue
         self.useDefaultBrightnessOnAppear = useDefaultBrightnessOnAppearValue
@@ -84,6 +122,11 @@ final class AppSettings: ObservableObject {
         self.isAngleBasedBrightnessActive = isAngleBasedBrightnessActiveValue
         self.lastSelectedColorIndex = lastSelectedColorIndexValue
         self.preventScreenLock = preventScreenLockValue
+        self.hasCompletedOnboarding = hasCompletedOnboardingValue
+        self.enableBreathingAnimation = enableBreathingAnimationValue
+        self.enableEmberParticles = enableEmberParticlesValue
+        self.showQuickColorBar = showQuickColorBarValue
+        self.alwaysShowBrightnessIndicator = alwaysShowBrightnessIndicatorValue
     }
 
     private func saveSettings() {
@@ -121,6 +164,13 @@ final class AppSettings: ObservableObject {
 
         // Save the selected index
         UserDefaults.standard.set(lastSelectedColorIndex, forKey: "lastSelectedColorIndex")
+
+        // Save new redesign settings
+        UserDefaults.standard.set(hasCompletedOnboarding, forKey: "hasCompletedOnboarding")
+        UserDefaults.standard.set(enableBreathingAnimation, forKey: "enableBreathingAnimation")
+        UserDefaults.standard.set(enableEmberParticles, forKey: "enableEmberParticles")
+        UserDefaults.standard.set(showQuickColorBar, forKey: "showQuickColorBar")
+        UserDefaults.standard.set(alwaysShowBrightnessIndicator, forKey: "alwaysShowBrightnessIndicator")
     }
 
     private static func color(red: Double, green: Double, blue: Double) -> Color {

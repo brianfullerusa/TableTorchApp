@@ -1,10 +1,9 @@
 //
-//  MenuReaderApp.swift
+//  TableTorchApp.swift
 //  TableTorch
 //
-//  Created by Brian Fuller on 1/4/25.
+//  Main app entry point with animated splash transition
 //
-
 
 import SwiftUI
 import UIKit
@@ -12,8 +11,6 @@ import UIKit
 @main
 struct TableTorchApp: App {
     @StateObject private var brightnessManager = BrightnessManager()
-
-    // Control splash visibility
     @State private var showSplash = true
 
     var body: some Scene {
@@ -25,17 +22,13 @@ struct TableTorchApp: App {
 
                 // Overlay the splash screen if needed
                 if showSplash {
-                    SplashView()
-                        .transition(.opacity)
-                        .allowsHitTesting(false)
-                }
-            }
-            .onAppear {
-                // Hide splash shortly after launch to match iOS guidance
-                DispatchQueue.main.asyncAfter(deadline: .now() + 1.4) {
-                    withAnimation {
-                        showSplash = false
-                    }
+                    SplashView(onComplete: {
+                        withAnimation(AnimationConstants.smoothTransition) {
+                            showSplash = false
+                        }
+                    })
+                    .transition(.opacity)
+                    .allowsHitTesting(false)
                 }
             }
         }

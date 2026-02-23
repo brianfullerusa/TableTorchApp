@@ -2,7 +2,7 @@
 //  ContentView.swift
 //  TableTorch
 //
-//  Created by Brian Fuller on 1/4/25.
+//  Redesigned full-screen light canvas with gesture-based controls
 //
 
 import SwiftUI
@@ -13,177 +13,218 @@ struct ContentView: View {
     @Environment(\.scenePhase) private var scenePhase
     @StateObject private var settings = AppSettings()
     @StateObject private var motionManager = MotionManager()
-    @State private var selectedIndex: Int = 0 //store an index for the selected color
+
+    // State for color and brightness
+    @State private var selectedIndex: Int = 0
     @State private var brightnessDraft: CGFloat = UIScreen.main.brightness
 
+    // Gesture states
+    @State private var isAdjustingBrightness: Bool = false
+    @State private var showSettingsSheet: Bool = false
+
+    // Double tap state
+    @State private var previousBrightness: CGFloat = 1.0
+    @State private var isMaxBrightness: Bool = true
+
     var body: some View {
-        NavigationStack {
-            ZStack {
-                Color.black
-                    .edgesIgnoringSafeArea(.all)
-
-                GeometryReader { proxy in
-                    let totalHeight = proxy.size.height
-                    let bottomPadding = max(proxy.safeAreaInsets.bottom, 8)
-                    let topSpacer = max(totalHeight * 0.01, 8)
-                    let sliderHeight: CGFloat = 30
-                    let buttonHeight: CGFloat = 44
-                    let controlSpacing: CGFloat = 12
-                    let controlsAllowance = topSpacer + controlSpacing + sliderHeight + buttonHeight + bottomPadding
-                    let proposedDisplayHeight = totalHeight * 0.92
-                    let availableHeight = max(totalHeight - controlsAllowance, CGFloat(0))
-                    let desiredHeight = max(proposedDisplayHeight, CGFloat(320))
-                    let displayHeight: CGFloat = {
-                        guard availableHeight >= CGFloat(320) else { return availableHeight }
-                        return min(desiredHeight, availableHeight)
-                    }()
-
-                    VStack(spacing: 0) {
-                        Rectangle()
-                            .fill(currentColor)
-                        .frame(height: displayHeight)
-                        .frame(maxWidth: .infinity)
-                        .cornerRadius(24)
-                        .padding(.horizontal, 12)
-                        .padding(.top, 12)
-                        .shadow(color: Color.black.opacity(0.35), radius: 18, x: 0, y: 12)
-
-                        Spacer(minLength: topSpacer)
-
-                        VStack(spacing: controlSpacing) {
-                            BrightnessSliderView(
-                                brightness: $brightnessDraft,
-                                isEnabled: !settings.isAngleBasedBrightnessActive
-                            )
-                                .frame(height: sliderHeight)
-
-                            HStack(spacing: 16) {
-                                ColorButtonsView(
-                                    selectedIndex: $selectedIndex,
-                                    buttonColors: settings.selectedColors
-                                )
-
-                                NavigationLink(destination: SettingsView(settings: settings)) {
-                                    Image(systemName: "gearshape")
-                                        .resizable()
-                                        .scaledToFit()
-                                        .foregroundColor(.white)
-                                        .frame(width: 32, height: 32)
-                                        .padding(10)
-                                        .background(Color.white.opacity(0.08))
-                                        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-                                }
-                            }
-                            .frame(height: buttonHeight)
-                        }
-                        .padding(.horizontal, 24)
-                        .padding(.bottom, bottomPadding)
-                    }
-                    .frame(width: proxy.size.width, height: proxy.size.height, alignment: .top)
-                }
-                // Header
-                .navigationBarTitleDisplayMode(.inline)
-                .toolbar {
-                    ToolbarItem(placement: .principal) {
-                        HStack(spacing: 8) {
-                            Image("FlameLayerPrimary")
-                                .resizable()
-                                .scaledToFit()
-                                .frame(width: 28, height: 28)
-                                .accessibilityHidden(true)
-
-                            Text("Table Torch")
-                                .font(.custom("Copperplate", size: 24))
-                                .foregroundColor(Color(red: 1.0, green: 0.65, blue: 0.0))
-                        }
-                    }
-                }
-                .toolbarBackground(
-                    Color(red: 0.0, green: 0.0, blue: 0.0),
-                    for: .navigationBar
+        mainContent
+            .statusBarHidden(true)
+            .persistentSystemOverlays(.hidden)
+            .preferredColorScheme(.dark)
+            .sheet(isPresented: $showSettingsSheet) {
+                SettingsSheetView(
+                    settings: settings,
+                    brightness: $brightnessDraft,
+                    selectedIndex: $selectedIndex
                 )
-                .toolbarBackground(.visible, for: .navigationBar)
-                .toolbarColorScheme(.light, for: .navigationBar)
             }
-        }
-        .onAppear {
-            brightnessManager.beginManagingBrightness()
-
-            // Use default brightness if set
-            if settings.useDefaultBrightnessOnAppear {
-                brightnessManager.currentBrightness = settings.defaultBrightness
+            .onAppear(perform: handleOnAppear)
+            .onChange(of: settings.isAngleBasedBrightnessActive, perform: handleAngleBasedChange)
+            .onChange(of: settings.preventScreenLock) { newValue in
+                UIApplication.shared.isIdleTimerDisabled = newValue
             }
+            .onReceive(motionManager.$brightnessTiltAngle) { tilt in
+                if settings.isAngleBasedBrightnessActive {
+                    brightnessManager.updateBrightness(for: tilt)
+                }
+            }
+            .onDisappear(perform: handleOnDisappear)
+            .onChange(of: selectedIndex) { newValue in
+                settings.lastSelectedColorIndex = newValue
+            }
+            .onChange(of: scenePhase, perform: handleScenePhaseChange)
+            .onChange(of: brightnessManager.currentBrightness, perform: updateBrightnessDraftIfNeeded)
+            .onChange(of: brightnessDraft, perform: propagateBrightnessChange)
+            .environmentObject(settings)
+    }
 
-            // Load the last selected index from settings
-            self.selectedIndex = settings.lastSelectedColorIndex
+    // MARK: - Main Content
 
-            // Start motion if angle-based brightness is active
-            startMotionUpdatesIfNeeded()
-            
-            // Load the auto sleep settings
-            UIApplication.shared.isIdleTimerDisabled = settings.preventScreenLock
-            brightnessDraft = brightnessManager.currentBrightness
+    private var mainContent: some View {
+        GeometryReader { _ in
+            ZStack {
+                canvasLayer
+                particleLayer
+                brightnessIndicatorLayer
+                bottomControls
+            }
+            .applyGestures(
+                brightnessDraft: $brightnessDraft,
+                isAdjustingBrightness: $isAdjustingBrightness,
+                isAngleBasedBrightnessActive: settings.isAngleBasedBrightnessActive,
+                toggleMaxBrightness: toggleMaxBrightness
+            )
         }
-        // If user toggles angle-based brightness in settings
-        .onChange(of: settings.isAngleBasedBrightnessActive) { newValue in
-            if newValue {
-                startMotionUpdatesIfNeeded()
+    }
+
+    // MARK: - Layers
+
+    private var canvasLayer: some View {
+        LuminousCanvasView(
+            color: currentColor,
+            enableBreathing: settings.enableBreathingAnimation
+        )
+        .ignoresSafeArea()
+    }
+
+    private var particleLayer: some View {
+        EmberParticleView(
+            color: currentColor,
+            isEnabled: settings.enableEmberParticles
+        )
+        .ignoresSafeArea()
+    }
+
+    private var brightnessIndicatorLayer: some View {
+        BrightnessIndicatorView(
+            brightness: brightnessDraft,
+            isVisible: isAdjustingBrightness,
+            torchColor: currentColor,
+            alwaysVisible: settings.alwaysShowBrightnessIndicator
+        )
+    }
+
+    private var bottomControls: some View {
+        VStack {
+            Spacer()
+            if settings.showQuickColorBar {
+                FloatingColorBarView(
+                    colors: settings.selectedColors,
+                    selectedIndex: $selectedIndex,
+                    onSettingsTapped: { showSettingsSheet = true }
+                )
+                .opacity(isAdjustingBrightness ? 0 : 1)
+                .animation(AnimationConstants.smoothTransition, value: isAdjustingBrightness)
+                .transition(.move(edge: .bottom).combined(with: .opacity))
+                .padding(.bottom, 16)
             } else {
-                stopMotionUpdates()
+                settingsButton
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
             }
         }
-        .onChange(of: settings.preventScreenLock) { newValue in
-                    UIApplication.shared.isIdleTimerDisabled = newValue
-        }
-        // Update brightness if angle-based is on
-        .onReceive(motionManager.$brightnessTiltAngle) { tilt in
-            if settings.isAngleBasedBrightnessActive {
-                brightnessManager.updateBrightness(for: tilt)
+        .animation(AnimationConstants.smoothTransition, value: settings.showQuickColorBar)
+    }
+
+    private var settingsButton: some View {
+        HStack {
+            Spacer()
+            Button {
+                showSettingsSheet = true
+            } label: {
+                Image(systemName: "gearshape.fill")
+                    .font(.system(size: 20))
+                    .foregroundStyle(.white.opacity(0.5))
+                    .padding(12)
+                    .contentShape(Circle())
             }
+            .accessibilityLabel("Settings")
+            .padding(.trailing, 16)
+            .padding(.bottom, 16)
         }
-        // Restore brightness & stop motion on disappear
-        .onDisappear {
-            brightnessManager.endManagingBrightness()
-            stopMotionUpdates()
-            settings.flushPendingSaves()
-        }
-        // Whenever selectedIndex changes, store it in settings
-        .onChange(of: selectedIndex) { newValue in
-            settings.lastSelectedColorIndex = newValue
-        }
-        .onChange(of: scenePhase) { phase in
-            switch phase {
-            case .active:
-                brightnessManager.beginManagingBrightness()
-                startMotionUpdatesIfNeeded()
-            case .inactive, .background:
-                brightnessManager.endManagingBrightness()
-                stopMotionUpdates()
-                settings.flushPendingSaves()
-            @unknown default:
-                break
-            }
-        }
-        .onChange(of: brightnessManager.currentBrightness) { newValue in
-            updateBrightnessDraftIfNeeded(with: newValue)
-        }
-        .onChange(of: brightnessDraft) { newValue in
-            propagateBrightnessChange(ifNeeded: newValue)
-        }
-        .environmentObject(settings)
     }
 }
 
-// An optional safe subscript so we don't crash if index is out of range
+// MARK: - Gesture Application
+
+private extension View {
+    func applyGestures(
+        brightnessDraft: Binding<CGFloat>,
+        isAdjustingBrightness: Binding<Bool>,
+        isAngleBasedBrightnessActive: Bool,
+        toggleMaxBrightness: @escaping () -> Void
+    ) -> some View {
+        self
+            .brightnessGesture(
+                brightness: brightnessDraft,
+                isAdjusting: isAdjustingBrightness,
+                isEnabled: !isAngleBasedBrightnessActive,
+                onThresholdCrossed: { _ in }
+            )
+            .simultaneousGesture(
+                TapGesture(count: 2)
+                    .onEnded {
+                        toggleMaxBrightness()
+                    }
+            )
+    }
+}
+
+// MARK: - Helper Extensions
+
 extension RandomAccessCollection {
     subscript(safe index: Index) -> Element? {
         return indices.contains(index) ? self[index] : nil
     }
 }
 
+// MARK: - Private Methods
+
 private extension ContentView {
     var currentColor: Color {
         settings.selectedColors[safe: selectedIndex] ?? .white
+    }
+
+    func handleOnAppear() {
+        brightnessManager.beginManagingBrightness()
+        HapticEngine.shared.prepare()
+
+        if settings.useDefaultBrightnessOnAppear {
+            brightnessManager.currentBrightness = settings.defaultBrightness
+        }
+
+        selectedIndex = settings.lastSelectedColorIndex
+        startMotionUpdatesIfNeeded()
+        UIApplication.shared.isIdleTimerDisabled = settings.preventScreenLock
+        brightnessDraft = brightnessManager.currentBrightness
+    }
+
+    func handleOnDisappear() {
+        brightnessManager.endManagingBrightness()
+        stopMotionUpdates()
+        settings.flushPendingSaves()
+    }
+
+    func handleAngleBasedChange(_ newValue: Bool) {
+        if newValue {
+            startMotionUpdatesIfNeeded()
+        } else {
+            stopMotionUpdates()
+        }
+    }
+
+    func handleScenePhaseChange(_ phase: ScenePhase) {
+        switch phase {
+        case .active:
+            brightnessManager.beginManagingBrightness()
+            startMotionUpdatesIfNeeded()
+            HapticEngine.shared.prepare()
+        case .inactive, .background:
+            brightnessManager.endManagingBrightness()
+            stopMotionUpdates()
+            settings.flushPendingSaves()
+        @unknown default:
+            break
+        }
     }
 
     func startMotionUpdatesIfNeeded() {
@@ -197,17 +238,39 @@ private extension ContentView {
     }
 
     func updateBrightnessDraftIfNeeded(with newValue: CGFloat) {
-        if abs(newValue - brightnessDraft) > brightnessSyncThreshold {
+        if abs(newValue - brightnessDraft) > 0.001 {
             brightnessDraft = newValue
         }
     }
 
     func propagateBrightnessChange(ifNeeded newValue: CGFloat) {
-        guard abs(brightnessManager.currentBrightness - newValue) > brightnessSyncThreshold else { return }
+        guard abs(brightnessManager.currentBrightness - newValue) > 0.001 else { return }
         Task { @MainActor in
             brightnessManager.currentBrightness = newValue
         }
     }
 
-    var brightnessSyncThreshold: CGFloat { 0.001 }
+    func toggleMaxBrightness() {
+        guard !settings.isAngleBasedBrightnessActive else { return }
+
+        HapticEngine.shared.brightnessThreshold()
+
+        if isMaxBrightness || brightnessDraft >= 0.99 {
+            previousBrightness = brightnessDraft
+            withAnimation(AnimationConstants.quickResponse) {
+                brightnessDraft = 0.3
+            }
+            isMaxBrightness = false
+        } else {
+            withAnimation(AnimationConstants.quickResponse) {
+                brightnessDraft = previousBrightness >= 0.99 ? 1.0 : previousBrightness
+            }
+            isMaxBrightness = true
+        }
+    }
+}
+
+#Preview {
+    ContentView()
+        .environmentObject(BrightnessManager())
 }
