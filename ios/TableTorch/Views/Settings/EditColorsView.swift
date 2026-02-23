@@ -8,55 +8,33 @@
 import SwiftUI
 
 struct EditColorsView: View {
-    @Binding var colors: [Color]
+    @ObservedObject var settings: AppSettings
     @Environment(\.dismiss) private var dismiss
+    @State private var showNameAlert = false
+    @State private var newPaletteName = ""
+
+    private var activePalette: ColorPalette? {
+        settings.activePalette
+    }
+
+    private var isModifiedFromCustom: Bool {
+        guard let palette = activePalette, !palette.isBuiltIn else { return false }
+        return settings.hasUnsavedColorChanges
+    }
 
     var body: some View {
         ScrollView {
             VStack(spacing: 20) {
-                ForEach(Array(colors.enumerated()), id: \.offset) { index, color in
+                ForEach(Array(settings.selectedColors.enumerated()), id: \.offset) { index, _ in
                     EditColorRow(
-                        color: $colors[index],
+                        color: $settings.selectedColors[index],
                         index: index
                     )
                 }
 
-                // Restore presets
-                VStack(spacing: 12) {
-                    Text("Restore Preset")
-                        .font(.subheadline.weight(.medium))
-                        .foregroundColor(.white.opacity(0.6))
-                        .frame(maxWidth: .infinity, alignment: .leading)
-
-                    HStack(spacing: 12) {
-                        Button {
-                            withAnimation(AnimationConstants.smoothTransition) {
-                                colors = AppSettings.defaultColors
-                            }
-                            HapticEngine.shared.toggleChanged()
-                        } label: {
-                            presetLabel(
-                                icon: "paintpalette",
-                                title: "Original",
-                                colors: AppSettings.defaultColors
-                            )
-                        }
-
-                        Button {
-                            withAnimation(AnimationConstants.smoothTransition) {
-                                colors = AppSettings.lowLightColors
-                            }
-                            HapticEngine.shared.toggleChanged()
-                        } label: {
-                            presetLabel(
-                                icon: "moon.stars",
-                                title: "Low Light",
-                                colors: AppSettings.lowLightColors
-                            )
-                        }
-                    }
-                }
-                .padding(.top, 12)
+                // Save as Palette section
+                paletteSection
+                    .padding(.top, 12)
             }
             .padding()
         }
@@ -68,42 +46,86 @@ struct EditColorsView: View {
         )
         .navigationTitle("Edit Colors")
         .navigationBarTitleDisplayMode(.inline)
+        .alert("Name Your Palette", isPresented: $showNameAlert) {
+            TextField("Palette name", text: $newPaletteName)
+            Button("Save") {
+                guard !newPaletteName.trimmingCharacters(in: .whitespaces).isEmpty else { return }
+                settings.savePalette(name: newPaletteName.trimmingCharacters(in: .whitespaces))
+                HapticEngine.shared.toggleChanged()
+            }
+            Button("Cancel", role: .cancel) { }
+        }
     }
 
-    private func presetLabel(icon: String, title: String, colors: [Color]) -> some View {
-        VStack(spacing: 8) {
-            HStack(spacing: 4) {
-                Image(systemName: icon)
-                    .font(.caption)
-                Text(title)
-                    .font(.subheadline.weight(.medium))
-            }
-            .foregroundColor(.white)
+    @ViewBuilder
+    private var paletteSection: some View {
+        VStack(spacing: 12) {
+            if let palette = activePalette, !settings.hasUnsavedColorChanges {
+                // Colors match the active palette
+                HStack(spacing: 6) {
+                    Image(systemName: "checkmark.circle.fill")
+                        .foregroundColor(.orange)
+                    Text("Currently: \(palette.name)")
+                        .font(.subheadline.weight(.medium))
+                        .foregroundColor(.orange)
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 10)
+            } else if isModifiedFromCustom, let palette = activePalette {
+                // Modified from a custom palette
+                VStack(spacing: 10) {
+                    Text("Currently: \(palette.name) (modified)")
+                        .font(.subheadline)
+                        .foregroundColor(.orange.opacity(0.7))
 
-            // Color preview dots
-            HStack(spacing: 3) {
-                ForEach(0..<min(colors.count, 6), id: \.self) { i in
-                    Circle()
-                        .fill(colors[i])
-                        .frame(width: 10, height: 10)
-                        .overlay(
-                            Circle()
-                                .stroke(Color.white.opacity(0.3), lineWidth: 0.5)
+                    Button {
+                        settings.updateActivePalette()
+                        HapticEngine.shared.toggleChanged()
+                    } label: {
+                        HStack(spacing: 6) {
+                            Image(systemName: "arrow.triangle.2.circlepath")
+                            Text("Update \"\(palette.name)\"")
+                        }
+                        .font(.subheadline.weight(.medium))
+                        .foregroundColor(.white)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 10)
+                        .background(
+                            Capsule()
+                                .fill(Color.orange)
                         )
+                    }
+
+                    Button {
+                        newPaletteName = settings.nextDefaultPaletteName()
+                        showNameAlert = true
+                    } label: {
+                        Text("Save as New Palette")
+                            .font(.subheadline)
+                            .foregroundColor(.orange)
+                    }
+                }
+            } else {
+                // No active palette or modified from built-in
+                Button {
+                    newPaletteName = settings.nextDefaultPaletteName()
+                    showNameAlert = true
+                } label: {
+                    HStack(spacing: 6) {
+                        Image(systemName: "plus.square.on.square")
+                        Text("Save as New Palette")
+                    }
+                    .font(.subheadline.weight(.medium))
+                    .foregroundColor(.orange)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 10)
+                    .background(
+                        Capsule()
+                            .stroke(Color.orange, lineWidth: 1)
+                    )
                 }
             }
         }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 10)
-        .padding(.horizontal, 12)
-        .background(
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .fill(.ultraThinMaterial)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 12, style: .continuous)
-                        .stroke(Color.white.opacity(0.15), lineWidth: 1)
-                )
-        )
     }
 }
 
@@ -180,6 +202,6 @@ private extension Color {
 
 #Preview {
     NavigationStack {
-        EditColorsView(colors: .constant(AppSettings.defaultColors))
+        EditColorsView(settings: AppSettings())
     }
 }

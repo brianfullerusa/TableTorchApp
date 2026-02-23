@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct TorchColorCardView: View {
-    @Binding var colors: [Color]
+    @ObservedObject var settings: AppSettings
     @Binding var selectedIndex: Int
 
     private let columns = [
@@ -16,6 +16,10 @@ struct TorchColorCardView: View {
         GridItem(.flexible(), spacing: 12),
         GridItem(.flexible(), spacing: 12)
     ]
+
+    private var showModifiedChip: Bool {
+        settings.matchingPalette() == nil
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -26,7 +30,7 @@ struct TorchColorCardView: View {
 
             // Color grid
             LazyVGrid(columns: columns, spacing: 12) {
-                ForEach(Array(colors.enumerated()), id: \.offset) { index, color in
+                ForEach(Array(settings.selectedColors.enumerated()), id: \.offset) { index, color in
                     ColorPickerCell(
                         color: color,
                         index: index,
@@ -40,16 +44,50 @@ struct TorchColorCardView: View {
                 }
             }
 
-            // Edit colors link
-            NavigationLink {
-                EditColorsView(colors: $colors)
-            } label: {
-                HStack {
-                    Image(systemName: "paintpalette")
-                    Text("Edit Colors")
+            // Palette chips horizontal scroll
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 8) {
+                    if showModifiedChip {
+                        ModifiedChipView()
+                    }
+
+                    ForEach(settings.allPalettes) { palette in
+                        PaletteChipView(
+                            palette: palette,
+                            isActive: palette.matches(colors: settings.selectedColors),
+                            onTap: {
+                                settings.loadPalette(palette)
+                            }
+                        )
+                    }
                 }
-                .font(.subheadline)
-                .foregroundColor(.orange)
+                .padding(.horizontal, 2)
+            }
+            .scrollIndicators(.hidden)
+
+            // Edit Colors + Palettes links
+            HStack(spacing: 24) {
+                NavigationLink {
+                    EditColorsView(settings: settings)
+                } label: {
+                    HStack(spacing: 4) {
+                        Image(systemName: "paintpalette")
+                        Text("Edit Colors")
+                    }
+                    .font(.subheadline)
+                    .foregroundColor(.orange)
+                }
+
+                NavigationLink {
+                    PaletteListView(settings: settings)
+                } label: {
+                    HStack(spacing: 4) {
+                        Image(systemName: "tray.full")
+                        Text("Palettes")
+                    }
+                    .font(.subheadline)
+                    .foregroundColor(.orange)
+                }
             }
             .padding(.top, 8)
         }
@@ -100,10 +138,12 @@ private struct ColorPickerCell: View {
         Color.black
             .ignoresSafeArea()
 
-        TorchColorCardView(
-            colors: .constant(AppSettings.defaultColors),
-            selectedIndex: .constant(1)
-        )
-        .padding()
+        NavigationStack {
+            TorchColorCardView(
+                settings: AppSettings(),
+                selectedIndex: .constant(1)
+            )
+            .padding()
+        }
     }
 }

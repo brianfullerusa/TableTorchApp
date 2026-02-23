@@ -10,6 +10,7 @@ import SwiftUI
 struct EmberParticleView: View {
     let color: Color
     let isEnabled: Bool
+    var particleShape: ParticleShape = .embers
 
     @State private var particles: [Particle] = []
     @State private var lastSpawnTime: Date = Date()
@@ -17,17 +18,9 @@ struct EmberParticleView: View {
 
     private let spawnInterval: Double = 1.0 / AnimationConstants.Particles.spawnRate
 
-    /// Check if the color is warm (reds, oranges, yellows)
-    private var isWarmColor: Bool {
-        let uiColor = UIColor(color)
-        var hue: CGFloat = 0
-        var saturation: CGFloat = 0
-        var brightness: CGFloat = 0
-        uiColor.getHue(&hue, saturation: &saturation, brightness: &brightness, alpha: nil)
-
-        // Warm colors: reds, oranges, yellows (hue 0-60 degrees and 330-360)
-        let hueDegrees = hue * 360
-        return saturation > 0.2 && (hueDegrees < 60 || hueDegrees > 330)
+    /// Particles show on all colors
+    private var isActiveColor: Bool {
+        true
     }
 
     var body: some View {
@@ -46,33 +39,46 @@ struct EmberParticleView: View {
                         let x = particle.startX + wobble
 
                         // Calculate opacity (fade as it rises)
-                        let opacity = (1.0 - progress) * 0.6
+                        let opacity = (1.0 - progress) * 0.9
 
                         // Calculate size (shrink as it rises)
                         let scale = 1.0 - (progress * 0.5)
-                        let size = particle.size * scale
+                        let particleSize = particle.size * scale
 
-                        // Draw the ember
+                        // Draw rect for the particle
                         let rect = CGRect(
-                            x: x - size / 2,
-                            y: y - size / 2,
-                            width: size,
-                            height: size
+                            x: x - particleSize / 2,
+                            y: y - particleSize / 2,
+                            width: particleSize,
+                            height: particleSize
                         )
 
+                        // Glow (larger, faded copy behind the main shape)
+                        context.opacity = opacity * 0.6
+                        let glowRect = rect.insetBy(dx: -particleSize * 1.0, dy: -particleSize * 1.0)
+                        if let symbolName = particleShape.sfSymbolName {
+                            var glowResolved = context.resolve(Image(systemName: symbolName))
+                            glowResolved.shading = .color(particle.color)
+                            context.draw(glowResolved, in: glowRect)
+                        } else {
+                            context.fill(
+                                Circle().path(in: glowRect),
+                                with: .color(particle.color)
+                            )
+                        }
+
+                        // Draw the particle shape
                         context.opacity = opacity
-                        context.fill(
-                            Circle().path(in: rect),
-                            with: .color(particle.color)
-                        )
-
-                        // Add glow
-                        context.opacity = opacity * 0.3
-                        let glowRect = rect.insetBy(dx: -size * 0.5, dy: -size * 0.5)
-                        context.fill(
-                            Circle().path(in: glowRect),
-                            with: .color(particle.color)
-                        )
+                        if let symbolName = particleShape.sfSymbolName {
+                            var resolved = context.resolve(Image(systemName: symbolName))
+                            resolved.shading = .color(particle.color)
+                            context.draw(resolved, in: rect)
+                        } else {
+                            context.fill(
+                                Circle().path(in: rect),
+                                with: .color(particle.color)
+                            )
+                        }
                     }
                 }
                 .onChange(of: timeline.date) { _ in
@@ -82,12 +88,12 @@ struct EmberParticleView: View {
         }
         .allowsHitTesting(false)
         .accessibilityHidden(true)
-        .opacity(isEnabled && isWarmColor && !reduceMotion ? 1 : 0)
-        .animation(.easeInOut(duration: 0.5), value: isEnabled && isWarmColor)
+        .opacity(isEnabled && isActiveColor && !reduceMotion ? 1 : 0)
+        .animation(.easeInOut(duration: 0.5), value: isEnabled && isActiveColor)
     }
 
     private func updateParticles(in size: CGSize, at date: Date) {
-        guard isEnabled && isWarmColor && !reduceMotion else {
+        guard isEnabled && isActiveColor && !reduceMotion else {
             particles.removeAll()
             return
         }
@@ -155,7 +161,7 @@ private extension CGFloat {
 #Preview {
     ZStack {
         Color.orange
-        EmberParticleView(color: .orange, isEnabled: true)
+        EmberParticleView(color: .orange, isEnabled: true, particleShape: .embers)
     }
     .ignoresSafeArea()
 }

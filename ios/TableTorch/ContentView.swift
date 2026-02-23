@@ -90,7 +90,8 @@ struct ContentView: View {
     private var particleLayer: some View {
         EmberParticleView(
             color: currentColor,
-            isEnabled: settings.enableEmberParticles
+            isEnabled: settings.enableEmberParticles,
+            particleShape: settings.particleShape
         )
         .ignoresSafeArea()
     }

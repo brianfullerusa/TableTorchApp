@@ -9,7 +9,7 @@ import SwiftUI
 
 @MainActor
 final class AppSettings: ObservableObject {
-    static let defaultColors: [Color] = [
+    nonisolated static let defaultColors: [Color] = [
         AppSettings.color(red: 255, green: 255, blue: 255),   // white
         AppSettings.color(red: 255, green: 200, blue: 150),   // soft white
         AppSettings.color(red: 152, green: 255, blue: 152),   // mint green
@@ -18,13 +18,22 @@ final class AppSettings: ObservableObject {
         AppSettings.color(red: 128, green: 0, blue: 0)        // dark red
     ]
 
-    static let lowLightColors: [Color] = [
+    nonisolated static let lowLightColors: [Color] = [
         AppSettings.color(red: 180, green: 0, blue: 0),       // deep red — night vision
         AppSettings.color(red: 200, green: 50, blue: 0),      // warm red — dark reading
         AppSettings.color(red: 255, green: 147, blue: 41),    // amber — warm night
         AppSettings.color(red: 255, green: 180, blue: 107),   // warm white — candlelight
         AppSettings.color(red: 255, green: 200, blue: 150),   // soft white — reading light
         AppSettings.color(red: 255, green: 255, blue: 255)    // white — bright reading
+    ]
+
+    nonisolated static let partyColors: [Color] = [
+        AppSettings.color(red: 255, green: 0,   blue: 255),   // hot magenta
+        AppSettings.color(red: 255, green: 25,  blue: 200),   // neon pink
+        AppSettings.color(red: 191, green: 0,   blue: 255),   // electric purple
+        AppSettings.color(red: 127, green: 0,   blue: 255),   // deep violet
+        AppSettings.color(red: 0,   green: 100, blue: 255),   // electric blue
+        AppSettings.color(red: 186, green: 85,  blue: 211)    // deep orchid
     ]
 
     private var pendingSaveTask: Task<Void, Never>?
@@ -67,6 +76,95 @@ final class AppSettings: ObservableObject {
     @Published var alwaysShowBrightnessIndicator: Bool {
         didSet { saveSettings() }
     }
+    @Published var particleShape: ParticleShape {
+        didSet { saveSettings() }
+    }
+
+    // Palette management
+    @Published var customPalettes: [ColorPalette] = [] {
+        didSet { saveSettings() }
+    }
+    @Published var activePaletteId: UUID? {
+        didSet { saveSettings() }
+    }
+
+    var allPalettes: [ColorPalette] {
+        ColorPalette.builtInPresets + customPalettes
+    }
+
+    var activePalette: ColorPalette? {
+        guard let id = activePaletteId else { return nil }
+        return allPalettes.first { $0.id == id }
+    }
+
+    var hasUnsavedColorChanges: Bool {
+        guard let palette = activePalette else { return true }
+        return !palette.matches(colors: selectedColors)
+    }
+
+    func savePalette(name: String) {
+        let palette = ColorPalette(
+            id: UUID(),
+            name: name,
+            colors: selectedColors.map { CodableColor(color: $0) },
+            isBuiltIn: false
+        )
+        customPalettes.append(palette)
+        activePaletteId = palette.id
+    }
+
+    func updateActivePalette() {
+        guard let id = activePaletteId,
+              let index = customPalettes.firstIndex(where: { $0.id == id }) else { return }
+        customPalettes[index].colors = selectedColors.map { CodableColor(color: $0) }
+    }
+
+    func loadPalette(_ palette: ColorPalette) {
+        withAnimation(AnimationConstants.smoothTransition) {
+            selectedColors = palette.swiftUIColors
+        }
+        activePaletteId = palette.id
+        HapticEngine.shared.colorChanged()
+    }
+
+    func deletePalette(id: UUID) {
+        customPalettes.removeAll { $0.id == id }
+        if activePaletteId == id {
+            activePaletteId = nil
+        }
+    }
+
+    func renamePalette(id: UUID, newName: String) {
+        guard let index = customPalettes.firstIndex(where: { $0.id == id }) else { return }
+        customPalettes[index].name = newName
+    }
+
+    func duplicatePalette(id: UUID) {
+        guard let palette = customPalettes.first(where: { $0.id == id }) else { return }
+        let copy = ColorPalette(
+            id: UUID(),
+            name: "\(palette.name) Copy",
+            colors: palette.colors,
+            isBuiltIn: false
+        )
+        customPalettes.append(copy)
+    }
+
+    func nextDefaultPaletteName() -> String {
+        let baseName = "My Palette"
+        let existingNames = Set(customPalettes.map(\.name))
+        if !existingNames.contains(baseName) { return baseName }
+        var counter = 2
+        while existingNames.contains("\(baseName) \(counter)") {
+            counter += 1
+        }
+        return "\(baseName) \(counter)"
+    }
+
+    /// Returns the palette matching current colors, if any
+    func matchingPalette() -> ColorPalette? {
+        allPalettes.first { $0.matches(colors: selectedColors) }
+    }
 
     init() {
         let defaults = UserDefaults.standard
@@ -94,7 +192,7 @@ final class AppSettings: ObservableObject {
            let decoded = try? JSONDecoder().decode([CodableColor].self, from: data) {
             selectedColorsValue = decoded.map { $0.color }
         } else {
-            selectedColorsValue = AppSettings.defaultColors
+            selectedColorsValue = AppSettings.lowLightColors
         }
 
         let isAngleBasedBrightnessActiveValue = defaults.bool(forKey: "isAngleBasedBrightnessActive")
@@ -115,6 +213,41 @@ final class AppSettings: ObservableObject {
         let showQuickColorBarValue = defaults.bool(forKey: "showQuickColorBar")
         let alwaysShowBrightnessIndicatorValue = defaults.bool(forKey: "alwaysShowBrightnessIndicator")
 
+        let particleShapeValue: ParticleShape
+        if let raw = defaults.string(forKey: "particleShape"),
+           let shape = ParticleShape(rawValue: raw) {
+            particleShapeValue = shape
+        } else {
+            particleShapeValue = .embers
+        }
+
+        // Load custom palettes
+        let customPalettesValue: [ColorPalette]
+        if let data = defaults.data(forKey: "customPalettes"),
+           let decoded = try? JSONDecoder().decode([ColorPalette].self, from: data) {
+            customPalettesValue = decoded
+        } else {
+            customPalettesValue = []
+        }
+
+        // Load active palette ID
+        let activePaletteIdValue: UUID?
+        if let idString = defaults.string(forKey: "activePaletteId"),
+           let uuid = UUID(uuidString: idString) {
+            activePaletteIdValue = uuid
+        } else {
+            // Migration: detect which built-in preset matches current colors
+            if ColorPalette.lowLight.matches(colors: selectedColorsValue) {
+                activePaletteIdValue = ColorPalette.lowLight.id
+            } else if ColorPalette.bright.matches(colors: selectedColorsValue) {
+                activePaletteIdValue = ColorPalette.bright.id
+            } else if ColorPalette.party.matches(colors: selectedColorsValue) {
+                activePaletteIdValue = ColorPalette.party.id
+            } else {
+                activePaletteIdValue = nil
+            }
+        }
+
         // Now assign to stored properties (safe to use self)
         self.defaultBrightness = defaultBrightnessValue
         self.useDefaultBrightnessOnAppear = useDefaultBrightnessOnAppearValue
@@ -127,6 +260,9 @@ final class AppSettings: ObservableObject {
         self.enableEmberParticles = enableEmberParticlesValue
         self.showQuickColorBar = showQuickColorBarValue
         self.alwaysShowBrightnessIndicator = alwaysShowBrightnessIndicatorValue
+        self.particleShape = particleShapeValue
+        self.customPalettes = customPalettesValue
+        self.activePaletteId = activePaletteIdValue
     }
 
     private func saveSettings() {
@@ -171,15 +307,26 @@ final class AppSettings: ObservableObject {
         UserDefaults.standard.set(enableEmberParticles, forKey: "enableEmberParticles")
         UserDefaults.standard.set(showQuickColorBar, forKey: "showQuickColorBar")
         UserDefaults.standard.set(alwaysShowBrightnessIndicator, forKey: "alwaysShowBrightnessIndicator")
+        UserDefaults.standard.set(particleShape.rawValue, forKey: "particleShape")
+
+        // Save palette data
+        if let encoded = try? JSONEncoder().encode(customPalettes) {
+            UserDefaults.standard.set(encoded, forKey: "customPalettes")
+        }
+        if let id = activePaletteId {
+            UserDefaults.standard.set(id.uuidString, forKey: "activePaletteId")
+        } else {
+            UserDefaults.standard.removeObject(forKey: "activePaletteId")
+        }
     }
 
-    private static func color(red: Double, green: Double, blue: Double) -> Color {
+    private nonisolated static func color(red: Double, green: Double, blue: Double) -> Color {
         Color(.sRGB, red: red / 255, green: green / 255, blue: blue / 255, opacity: 1.0)
     }
 }
 
 // CodableColor struct
-struct CodableColor: Codable {
+struct CodableColor: Codable, Equatable {
     let red: CGFloat
     let green: CGFloat
     let blue: CGFloat

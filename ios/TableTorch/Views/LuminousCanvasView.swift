@@ -14,8 +14,8 @@ struct LuminousCanvasView: View {
     @State private var breathingPhase: CGFloat = 0.0
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
-    /// Breathing intensity variance (3% as specified in plan)
-    private let breathingVariance: CGFloat = 0.03
+    /// Breathing intensity variance (30%)
+    private let breathingVariance: CGFloat = 0.30
 
     /// Computed intensity based on breathing animation
     private var intensity: CGFloat {
