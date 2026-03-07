@@ -13,6 +13,7 @@ struct ColorRingView: View {
     let onSettingsTapped: () -> Void
 
     @State private var animatedAppearance: Bool = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     private let radius: CGFloat = AnimationConstants.Overlay.colorRingRadius
 
@@ -39,7 +40,7 @@ struct ColorRingView: View {
                 .scaleEffect(animatedAppearance ? 1.0 : 0.1)
                 .opacity(animatedAppearance ? 1.0 : 0.0)
                 .animation(
-                    AnimationConstants.bouncy.delay(delay),
+                    reduceMotion ? .none : AnimationConstants.bouncy.delay(delay),
                     value: animatedAppearance
                 )
             }
@@ -62,11 +63,11 @@ struct ColorRingView: View {
             .scaleEffect(animatedAppearance ? 1.0 : 0.5)
             .opacity(animatedAppearance ? 1.0 : 0.0)
             .animation(
-                AnimationConstants.smoothTransition.delay(0.1),
+                reduceMotion ? .none : AnimationConstants.smoothTransition.delay(0.1),
                 value: animatedAppearance
             )
-            .accessibilityLabel("Settings")
-            .accessibilityHint("Double tap to open settings")
+            .accessibilityLabel(Text("Settings"))
+            .accessibilityHint(Text("Double tap to open settings"))
         }
         .onAppear {
             animatedAppearance = true

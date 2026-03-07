@@ -103,18 +103,18 @@ private struct ColorPickerCell: View {
 
     var body: some View {
         VStack(spacing: 6) {
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .fill(color)
-                .frame(height: 50)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 12, style: .continuous)
-                        .stroke(isSelected ? Color.white : Color.white.opacity(0.3),
-                                lineWidth: isSelected ? 2.5 : 1)
-                )
-                .shadow(color: color.opacity(isSelected ? 0.7 : 0.4), radius: isSelected ? 8 : 6)
-                .onTapGesture {
-                    onSelected()
-                }
+            Button(action: onSelected) {
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .fill(color)
+                    .frame(height: 50)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 12, style: .continuous)
+                            .stroke(isSelected ? Color.white : Color.white.opacity(0.3),
+                                    lineWidth: isSelected ? 2.5 : 1)
+                    )
+                    .shadow(color: color.opacity(isSelected ? 0.7 : 0.4), radius: isSelected ? 8 : 6)
+            }
+            .buttonStyle(.plain)
 
             HStack(spacing: 4) {
                 if isSelected {
@@ -128,8 +128,8 @@ private struct ColorPickerCell: View {
             }
         }
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("Torch \(index + 1) color\(isSelected ? ", selected" : "")")
-        .accessibilityHint("Tap to select")
+        .accessibilityLabel(Text("Torch \(index + 1) color\(isSelected ? String(localized: ", selected") : "")"))
+        .accessibilityHint(Text("Tap to select"))
     }
 }
 

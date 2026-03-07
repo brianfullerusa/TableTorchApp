@@ -10,13 +10,13 @@ import CoreMotion
 
 struct ContentView: View {
     @EnvironmentObject var brightnessManager: BrightnessManager
+    @EnvironmentObject var settings: AppSettings
     @Environment(\.scenePhase) private var scenePhase
-    @StateObject private var settings = AppSettings()
     @StateObject private var motionManager = MotionManager()
 
     // State for color and brightness
     @State private var selectedIndex: Int = 0
-    @State private var brightnessDraft: CGFloat = UIScreen.main.brightness
+    @State private var brightnessDraft: CGFloat = 1.0
 
     // Gesture states
     @State private var isAdjustingBrightness: Bool = false
@@ -24,7 +24,7 @@ struct ContentView: View {
 
     // Double tap state
     @State private var previousBrightness: CGFloat = 1.0
-    @State private var isMaxBrightness: Bool = true
+    @State private var isMaxBrightness: Bool = false
 
     var body: some View {
         mainContent
@@ -35,45 +35,66 @@ struct ContentView: View {
                 SettingsSheetView(
                     settings: settings,
                     brightness: $brightnessDraft,
-                    selectedIndex: $selectedIndex
+                    selectedIndex: $selectedIndex,
+                    isMotionAvailable: motionManager.isMotionAvailable
                 )
             }
             .onAppear(perform: handleOnAppear)
-            .onChange(of: settings.isAngleBasedBrightnessActive, perform: handleAngleBasedChange)
-            .onChange(of: settings.preventScreenLock) { newValue in
+            .onChange(of: settings.isAngleBasedBrightnessActive) { _, newValue in
+                handleAngleBasedChange(newValue)
+            }
+            .onChange(of: settings.preventScreenLock) { _, newValue in
                 UIApplication.shared.isIdleTimerDisabled = newValue
             }
             .onReceive(motionManager.$brightnessTiltAngle) { tilt in
                 if settings.isAngleBasedBrightnessActive {
                     brightnessManager.updateBrightness(for: tilt)
+                    let updated = brightnessManager.currentBrightness
+                    if abs(updated - brightnessDraft) > 0.001 {
+                        brightnessDraft = updated
+                    }
                 }
             }
             .onDisappear(perform: handleOnDisappear)
-            .onChange(of: selectedIndex) { newValue in
+            .onChange(of: selectedIndex) { _, newValue in
                 settings.lastSelectedColorIndex = newValue
             }
-            .onChange(of: scenePhase, perform: handleScenePhaseChange)
-            .onChange(of: brightnessManager.currentBrightness, perform: updateBrightnessDraftIfNeeded)
-            .onChange(of: brightnessDraft, perform: propagateBrightnessChange)
-            .environmentObject(settings)
+            .onChange(of: scenePhase) { _, newValue in
+                handleScenePhaseChange(newValue)
+            }
+            .onChange(of: brightnessManager.currentBrightness) { _, newValue in
+                updateBrightnessDraftIfNeeded(with: newValue)
+            }
+            .onChange(of: brightnessDraft) { _, newValue in
+                propagateBrightnessChange(ifNeeded: newValue)
+            }
+            .onChange(of: settings.selectedColors) { _, newColors in
+                if selectedIndex >= newColors.count {
+                    selectedIndex = max(0, newColors.count - 1)
+                }
+            }
     }
 
     // MARK: - Main Content
 
     private var mainContent: some View {
-        GeometryReader { _ in
+        GeometryReader { geometry in
             ZStack {
                 canvasLayer
                 particleLayer
                 brightnessIndicatorLayer
-                bottomControls
+                bottomControls(safeAreaBottom: geometry.safeAreaInsets.bottom)
             }
             .applyGestures(
                 brightnessDraft: $brightnessDraft,
                 isAdjustingBrightness: $isAdjustingBrightness,
                 isAngleBasedBrightnessActive: settings.isAngleBasedBrightnessActive,
+                viewHeight: geometry.size.height,
                 toggleMaxBrightness: toggleMaxBrightness
             )
+        }
+        .accessibilityAction(.magicTap) {
+            toggleMaxBrightness()
         }
     }
 
@@ -82,14 +103,17 @@ struct ContentView: View {
     private var canvasLayer: some View {
         LuminousCanvasView(
             color: currentColor,
-            enableBreathing: settings.enableBreathingAnimation
+            enableBreathing: settings.enableBreathingAnimation,
+            breathingDepth: settings.breathingDepth,
+            cycleDuration: settings.breathingCycleDuration
         )
         .ignoresSafeArea()
     }
 
     private var particleLayer: some View {
         EmberParticleView(
-            color: currentColor,
+            allColors: settings.selectedColors,
+            selectedIndex: selectedIndex,
             isEnabled: settings.enableEmberParticles,
             particleShape: settings.particleShape
         )
@@ -105,7 +129,7 @@ struct ContentView: View {
         )
     }
 
-    private var bottomControls: some View {
+    private func bottomControls(safeAreaBottom: CGFloat) -> some View {
         VStack {
             Spacer()
             if settings.showQuickColorBar {
@@ -117,7 +141,7 @@ struct ContentView: View {
                 .opacity(isAdjustingBrightness ? 0 : 1)
                 .animation(AnimationConstants.smoothTransition, value: isAdjustingBrightness)
                 .transition(.move(edge: .bottom).combined(with: .opacity))
-                .padding(.bottom, 16)
+                .padding(.bottom, max(16, safeAreaBottom))
             } else {
                 settingsButton
                     .transition(.move(edge: .bottom).combined(with: .opacity))
@@ -134,7 +158,7 @@ struct ContentView: View {
             } label: {
                 Image(systemName: "gearshape.fill")
                     .font(.system(size: 20))
-                    .foregroundStyle(.white.opacity(0.5))
+                    .foregroundStyle(currentColor.adaptiveForeground.opacity(0.5))
                     .padding(12)
                     .contentShape(Circle())
             }
@@ -152,6 +176,7 @@ private extension View {
         brightnessDraft: Binding<CGFloat>,
         isAdjustingBrightness: Binding<Bool>,
         isAngleBasedBrightnessActive: Bool,
+        viewHeight: CGFloat,
         toggleMaxBrightness: @escaping () -> Void
     ) -> some View {
         self
@@ -159,6 +184,7 @@ private extension View {
                 brightness: brightnessDraft,
                 isAdjusting: isAdjustingBrightness,
                 isEnabled: !isAngleBasedBrightnessActive,
+                viewHeight: viewHeight,
                 onThresholdCrossed: { _ in }
             )
             .simultaneousGesture(
@@ -230,7 +256,7 @@ private extension ContentView {
 
     func startMotionUpdatesIfNeeded() {
         if settings.isAngleBasedBrightnessActive {
-            motionManager.startUpdates()
+            motionManager.startUpdates(brightnessControl: settings.isAngleBasedBrightnessActive)
         }
     }
 
@@ -246,9 +272,7 @@ private extension ContentView {
 
     func propagateBrightnessChange(ifNeeded newValue: CGFloat) {
         guard abs(brightnessManager.currentBrightness - newValue) > 0.001 else { return }
-        Task { @MainActor in
-            brightnessManager.currentBrightness = newValue
-        }
+        brightnessManager.currentBrightness = newValue
     }
 
     func toggleMaxBrightness() {
@@ -274,4 +298,5 @@ private extension ContentView {
 #Preview {
     ContentView()
         .environmentObject(BrightnessManager())
+        .environmentObject(AppSettings())
 }

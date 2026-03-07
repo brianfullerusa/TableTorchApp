@@ -11,8 +11,10 @@ struct SettingsSheetView: View {
     @ObservedObject var settings: AppSettings
     @Binding var brightness: CGFloat
     @Binding var selectedIndex: Int
+    var isMotionAvailable: Bool = true
     @Environment(\.dismiss) private var dismiss
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var localBrightnessDraft: CGFloat = 1.0
 
     var body: some View {
         NavigationStack {
@@ -57,6 +59,7 @@ struct SettingsSheetView: View {
             .toolbarBackground(.visible, for: .navigationBar)
         }
         .presentationDetents([.medium, .large])
+        .presentationSizing(.form)
         .presentationDragIndicator(.visible)
         .modifier(PresentationBackgroundModifier())
     }
@@ -73,13 +76,18 @@ struct SettingsSheetView: View {
                     Text("Default Brightness")
                         .foregroundColor(.white)
                     Spacer()
-                    Text("\(Int(settings.defaultBrightness * 100))%")
+                    Text("\(Int(localBrightnessDraft * 100))%")
                         .foregroundColor(.white.opacity(0.7))
                         .monospacedDigit()
                 }
 
-                Slider(value: $settings.defaultBrightness, in: 0...1, step: 0.01)
-                    .tint(.orange)
+                Slider(value: $localBrightnessDraft, in: 0...1, step: 0.01) { editing in
+                    if !editing {
+                        settings.defaultBrightness = localBrightnessDraft
+                    }
+                }
+                .tint(.orange)
+                .onAppear { localBrightnessDraft = settings.defaultBrightness }
             }
 
             EmberToggleView(
@@ -90,9 +98,15 @@ struct SettingsSheetView: View {
 
             EmberToggleView(
                 title: "Tilt Brightness Control",
-                isOn: $settings.isAngleBasedBrightnessActive,
-                subtitle: "Adjust brightness by tilting device"
+                isOn: Binding(
+                    get: { settings.isAngleBasedBrightnessActive && isMotionAvailable },
+                    set: { settings.isAngleBasedBrightnessActive = $0 }
+                ),
+                subtitle: isMotionAvailable
+                    ? "Adjust brightness by tilting device"
+                    : "Not available on this device"
             )
+            .disabled(!isMotionAvailable)
 
             EmberToggleView(
                 title: "Always Show Brightness",
@@ -139,6 +153,34 @@ struct SettingsSheetView: View {
                 subtitle: reduceMotion ? "Disabled (Reduce Motion is on)" : "Subtle pulsing light effect"
             )
 
+            if settings.enableBreathingAnimation && !reduceMotion {
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack {
+                        Text("Dim Depth")
+                            .foregroundColor(.white)
+                        Spacer()
+                        Text("\(Int(settings.breathingDepth * 100))%")
+                            .foregroundColor(.white.opacity(0.7))
+                            .monospacedDigit()
+                    }
+                    Slider(value: $settings.breathingDepth, in: 0.02...0.40, step: 0.01)
+                        .tint(.orange)
+                }
+
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack {
+                        Text("Cycle Duration")
+                            .foregroundColor(.white)
+                        Spacer()
+                        Text(String(format: "%.1fs", settings.breathingCycleDuration))
+                            .foregroundColor(.white.opacity(0.7))
+                            .monospacedDigit()
+                    }
+                    Slider(value: $settings.breathingCycleDuration, in: 1.0...10.0, step: 0.5)
+                        .tint(.orange)
+                }
+            }
+
             EmberToggleView(
                 title: "Ember Particles",
                 isOn: Binding(
@@ -153,6 +195,7 @@ struct SettingsSheetView: View {
             }
         }
         .glassCard(tintColor: .orange)
+        .animation(AnimationConstants.smoothTransition, value: settings.enableBreathingAnimation)
         .animation(AnimationConstants.smoothTransition, value: settings.enableEmberParticles)
     }
 
@@ -169,8 +212,7 @@ struct SettingsSheetView: View {
                         Text(shape.displayName)
                             .font(.caption2)
                     }
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 8)
+                    .frame(maxWidth: .infinity, minHeight: 44)
                     .background(
                         RoundedRectangle(cornerRadius: 8)
                             .fill(settings.particleShape == shape
@@ -191,14 +233,9 @@ struct SettingsSheetView: View {
     }
 }
 
-/// Modifier to apply presentation background with iOS version check
 private struct PresentationBackgroundModifier: ViewModifier {
     func body(content: Content) -> some View {
-        if #available(iOS 16.4, *) {
-            content.presentationBackground(.ultraThinMaterial)
-        } else {
-            content
-        }
+        content.presentationBackground(.ultraThinMaterial)
     }
 }
 

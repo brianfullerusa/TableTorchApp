@@ -8,10 +8,30 @@
 import SwiftUI
 
 struct ColorPalette: Codable, Identifiable, Equatable {
+    static let colorCount = 6
+
     let id: UUID
     var name: String
-    var colors: [CodableColor]   // Always exactly 6
+    var colors: [CodableColor] {
+        didSet { colors = Self.normalized(colors) }
+    }
     let isBuiltIn: Bool
+
+    init(id: UUID, name: String, colors: [CodableColor], isBuiltIn: Bool) {
+        self.id = id
+        self.name = name
+        self.colors = Self.normalized(colors)
+        self.isBuiltIn = isBuiltIn
+    }
+
+    /// Pad or truncate to exactly `colorCount` entries.
+    private static func normalized(_ colors: [CodableColor]) -> [CodableColor] {
+        if colors.count == colorCount { return colors }
+        if colors.count > colorCount { return Array(colors.prefix(colorCount)) }
+        // Pad with white
+        let filler = CodableColor(color: .white)
+        return colors + Array(repeating: filler, count: colorCount - colors.count)
+    }
 
     var swiftUIColors: [Color] {
         colors.map { $0.color }
@@ -39,21 +59,21 @@ extension ColorPalette {
 
     static let lowLight = ColorPalette(
         id: lowLightUUID,
-        name: "Low Light",
+        name: String(localized: "Low Light"),
         colors: AppSettings.lowLightColors.map { CodableColor(color: $0) },
         isBuiltIn: true
     )
 
     static let bright = ColorPalette(
         id: brightUUID,
-        name: "Bright",
+        name: String(localized: "Bright"),
         colors: AppSettings.defaultColors.map { CodableColor(color: $0) },
         isBuiltIn: true
     )
 
     static let party = ColorPalette(
         id: partyUUID,
-        name: "Party",
+        name: String(localized: "Party"),
         colors: AppSettings.partyColors.map { CodableColor(color: $0) },
         isBuiltIn: true
     )

@@ -15,7 +15,8 @@ struct AccessibleColorToken: View {
     let onTap: () -> Void
 
     @Environment(\.accessibilityDifferentiateWithoutColor) private var differentiateWithoutColor
-    @ScaledMetric private var tokenSize: CGFloat = 56
+    @ScaledMetric(relativeTo: .body) private var rawTokenSize: CGFloat = 56
+    private var tokenSize: CGFloat { min(rawTokenSize, 80) }
 
     /// Patterns for color differentiation
     private var patternOverlay: some View {
@@ -121,9 +122,31 @@ struct AccessibleColorToken: View {
         }
         .buttonStyle(.plain)
         .frame(width: AnimationConstants.Overlay.touchTargetSize, height: AnimationConstants.Overlay.touchTargetSize)
-        .accessibilityLabel("Color \(index + 1), \(colorName)")
+        .accessibilityLabel(Text("Color \(index + 1), \(colorName)"))
         .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : .isButton)
-        .accessibilityHint(isSelected ? "Currently selected" : "Double tap to select")
+        .accessibilityHint(Text(isSelected ? LocalizedStringKey("Currently selected") : LocalizedStringKey("Double tap to select")))
+    }
+}
+
+// MARK: - Luminance Utilities
+
+extension Color {
+    /// Perceived luminance (Rec. 709) in the 0…1 range.
+    var perceivedLuminance: CGFloat {
+        let uiColor = UIColor(self)
+        var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
+        uiColor.getRed(&r, green: &g, blue: &b, alpha: &a)
+        return 0.2126 * r + 0.7152 * g + 0.0722 * b
+    }
+
+    /// Whether this color is perceptually light (luminance > 0.55).
+    var isLight: Bool {
+        perceivedLuminance > 0.55
+    }
+
+    /// Foreground color that contrasts with this color as a background.
+    var adaptiveForeground: Color {
+        isLight ? .black : .white
     }
 }
 
@@ -139,23 +162,23 @@ extension Color {
 
         // Low saturation = white/gray/black
         if saturation < 0.1 {
-            if brightness > 0.9 { return "White" }
-            if brightness < 0.2 { return "Black" }
-            return "Gray"
+            if brightness > 0.9 { return String(localized: "White") }
+            if brightness < 0.2 { return String(localized: "Black") }
+            return String(localized: "Gray")
         }
 
         // Map hue to color names
         let hueDegrees = hue * 360
         switch hueDegrees {
-        case 0..<15, 345..<360: return "Red"
-        case 15..<45: return "Orange"
-        case 45..<75: return "Yellow"
-        case 75..<150: return "Green"
-        case 150..<195: return "Cyan"
-        case 195..<255: return "Blue"
-        case 255..<285: return "Purple"
-        case 285..<345: return "Pink"
-        default: return "Color"
+        case 0..<15, 345..<360: return String(localized: "Red")
+        case 15..<45: return String(localized: "Orange")
+        case 45..<75: return String(localized: "Yellow")
+        case 75..<150: return String(localized: "Green")
+        case 150..<195: return String(localized: "Cyan")
+        case 195..<255: return String(localized: "Blue")
+        case 255..<285: return String(localized: "Purple")
+        case 285..<345: return String(localized: "Pink")
+        default: return String(localized: "Color")
         }
     }
 }

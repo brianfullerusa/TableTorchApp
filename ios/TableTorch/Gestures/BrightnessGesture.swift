@@ -11,6 +11,7 @@ struct BrightnessGestureModifier: ViewModifier {
     @Binding var brightness: CGFloat
     @Binding var isAdjusting: Bool
     let isEnabled: Bool
+    var viewHeight: CGFloat?
     let onThresholdCrossed: (CGFloat) -> Void
 
     @State private var startBrightness: CGFloat = 0.0
@@ -33,7 +34,7 @@ struct BrightnessGestureModifier: ViewModifier {
 
                         // Map vertical translation to brightness
                         // Swipe up = increase, swipe down = decrease
-                        let screenHeight = UIScreen.main.bounds.height
+                        let screenHeight = viewHeight ?? UIScreen.main.bounds.height
                         let delta = -value.translation.height / screenHeight
                         let newBrightness = max(0, min(1, startBrightness + delta))
                         brightness = newBrightness
@@ -69,12 +70,14 @@ extension View {
         brightness: Binding<CGFloat>,
         isAdjusting: Binding<Bool>,
         isEnabled: Bool = true,
+        viewHeight: CGFloat? = nil,
         onThresholdCrossed: @escaping (CGFloat) -> Void = { _ in }
     ) -> some View {
         modifier(BrightnessGestureModifier(
             brightness: brightness,
             isAdjusting: isAdjusting,
             isEnabled: isEnabled,
+            viewHeight: viewHeight,
             onThresholdCrossed: onThresholdCrossed
         ))
     }

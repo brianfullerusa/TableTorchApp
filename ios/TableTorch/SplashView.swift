@@ -167,7 +167,7 @@ struct SplashView: View {
     /// Small bright dots that shoot upward and outward during the
     /// spark-to-flame transition, like sparks from striking a match.
     private var sparkParticlesLayer: some View {
-        TimelineView(.animation) { timeline in
+        TimelineView(.animation(minimumInterval: 1.0 / 30.0)) { timeline in
             let elapsed = timeline.date.timeIntervalSince(startDate ?? timeline.date)
             Canvas { context, size in
                 drawSparkParticles(context: &context, size: size, elapsed: elapsed)
@@ -306,7 +306,7 @@ struct SplashView: View {
     /// Uses a warm gradient overlay that mimics firelight illumination,
     /// fading from bright gold at the top to deeper amber at the bottom.
     private var titleView: some View {
-        Text("TableTorch")
+        Text("Table Torch")
             .font(.system(size: 36, weight: .bold, design: .default))
             .foregroundColor(.clear)
             .overlay(
@@ -319,7 +319,7 @@ struct SplashView: View {
                     endPoint: .bottom
                 )
                 .mask(
-                    Text("TableTorch")
+                    Text("Table Torch")
                         .font(.system(size: 36, weight: .bold, design: .default))
                 )
             )
@@ -457,6 +457,7 @@ struct SplashView: View {
 
         // --- Sequence complete ---
         DispatchQueue.main.asyncAfter(deadline: .now() + S.totalDuration) {
+            flameLive = false
             completed = true
             onComplete()
         }

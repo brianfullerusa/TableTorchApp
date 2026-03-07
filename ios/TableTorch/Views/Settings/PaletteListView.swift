@@ -54,14 +54,6 @@ struct PaletteListView: View {
                             ) {
                                 settings.loadPalette(palette)
                             }
-                            .swipeActions(edge: .trailing) {
-                                Button(role: .destructive) {
-                                    paletteToDelete = palette
-                                    showDeleteAlert = true
-                                } label: {
-                                    Label("Delete", systemImage: "trash")
-                                }
-                            }
                             .contextMenu {
                                 Button {
                                     paletteToRename = palette
@@ -147,80 +139,87 @@ private struct PaletteRow: View {
     let isActive: Bool
     let onTap: () -> Void
 
+    private var badgeColor: Color {
+        palette.colors.first?.color ?? .orange
+    }
+
     var body: some View {
         Button(action: onTap) {
-            HStack(spacing: 12) {
-                // Icon badge
-                RoundedRectangle(cornerRadius: 10, style: .continuous)
-                    .fill(palette.colors.first?.color.opacity(0.3) ?? Color.orange.opacity(0.3))
-                    .frame(width: 36, height: 36)
-                    .overlay(
-                        Image(systemName: palette.icon)
-                            .font(.system(size: 16))
-                            .foregroundColor(palette.colors.first?.color ?? .orange)
-                    )
-
-                // Name and status
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(palette.name)
-                        .font(.headline)
-                        .foregroundColor(.white)
-                    if isActive {
-                        Text("Active")
-                            .font(.caption)
-                            .foregroundColor(.orange)
-                    }
-                }
-
-                Spacer()
-
-                // Color dots
-                HStack(spacing: 3) {
-                    ForEach(0..<min(palette.colors.count, 6), id: \.self) { i in
-                        Circle()
-                            .fill(palette.colors[i].color)
-                            .frame(width: 10, height: 10)
-                            .overlay(
-                                Circle()
-                                    .stroke(Color.white.opacity(0.3), lineWidth: 0.5)
-                            )
-                    }
-                }
-
-                Image(systemName: "chevron.right")
-                    .font(.caption)
-                    .foregroundColor(.white.opacity(0.3))
-            }
-            .padding(12)
-            .background(
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .fill(.ultraThinMaterial)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 16, style: .continuous)
-                            .fill(isActive ? Color.orange.opacity(0.08) : Color.clear)
-                    )
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 16, style: .continuous)
-                            .stroke(
-                                isActive ? Color.orange.opacity(0.3) : Color.white.opacity(0.1),
-                                lineWidth: 1
-                            )
-                    )
-            )
+            rowContent
         }
         .buttonStyle(.plain)
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("\(palette.name) palette\(isActive ? ", active" : "")")
-        .accessibilityHint("Tap to load this palette")
+        .accessibilityLabel(Text("\(palette.name) palette\(isActive ? String(localized: ", active") : "")"))
+        .accessibilityHint(Text("Tap to load this palette"))
         .accessibilityAddTraits(isActive ? .isSelected : [])
     }
-}
 
-// Extend View to add swipeActions when not in a List
-private extension View {
-    @ViewBuilder
-    func swipeActions(edge: HorizontalEdge, @ViewBuilder content: () -> some View) -> some View {
-        self // Swipe actions require List; we use contextMenu instead for ScrollView
+    private var rowContent: some View {
+        HStack(spacing: 12) {
+            iconBadge
+            nameAndStatus
+            Spacer()
+            colorDots
+            Image(systemName: "chevron.right")
+                .font(.caption)
+                .foregroundColor(.white.opacity(0.3))
+        }
+        .padding(12)
+        .background(rowBackground)
+    }
+
+    private var iconBadge: some View {
+        RoundedRectangle(cornerRadius: 10, style: .continuous)
+            .fill(badgeColor.opacity(0.3))
+            .frame(width: 36, height: 36)
+            .overlay(
+                Image(systemName: palette.icon)
+                    .font(.system(size: 16))
+                    .foregroundColor(badgeColor)
+            )
+    }
+
+    private var nameAndStatus: some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(palette.name)
+                .font(.headline)
+                .foregroundColor(.white)
+            if isActive {
+                Text("Active")
+                    .font(.caption)
+                    .foregroundColor(.orange)
+            }
+        }
+    }
+
+    private var colorDots: some View {
+        let paletteColors = palette.colors
+        return HStack(spacing: 3) {
+            ForEach(0..<min(paletteColors.count, 6), id: \.self) { i in
+                Circle()
+                    .fill(paletteColors[i].color)
+                    .frame(width: 10, height: 10)
+                    .overlay(
+                        Circle()
+                            .stroke(Color.white.opacity(0.3), lineWidth: 0.5)
+                    )
+            }
+        }
+    }
+
+    private var rowBackground: some View {
+        let borderColor: Color = isActive ? Color.orange.opacity(0.3) : Color.white.opacity(0.1)
+        let tintColor: Color = isActive ? Color.orange.opacity(0.08) : Color.clear
+        return RoundedRectangle(cornerRadius: 16, style: .continuous)
+            .fill(.ultraThinMaterial)
+            .overlay(
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .fill(tintColor)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .stroke(borderColor, lineWidth: 1)
+            )
     }
 }
 

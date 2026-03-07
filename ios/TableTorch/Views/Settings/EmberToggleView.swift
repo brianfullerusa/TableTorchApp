@@ -2,26 +2,24 @@
 //  EmberToggleView.swift
 //  TableTorch
 //
-//  Custom toggle with ember glow effect
+//  Custom toggle with ember glow effect using native Toggle + ToggleStyle
 //
 
 import SwiftUI
 
 struct EmberToggleView: View {
-    let title: String
+    let title: LocalizedStringKey
     @Binding var isOn: Bool
-    let subtitle: String?
+    let subtitle: LocalizedStringKey?
 
-    @State private var isAnimating: Bool = false
-
-    init(title: String, isOn: Binding<Bool>, subtitle: String? = nil) {
+    init(title: LocalizedStringKey, isOn: Binding<Bool>, subtitle: LocalizedStringKey? = nil) {
         self.title = title
         self._isOn = isOn
         self.subtitle = subtitle
     }
 
     var body: some View {
-        HStack {
+        Toggle(isOn: $isOn) {
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
                     .font(.body)
@@ -33,15 +31,25 @@ struct EmberToggleView: View {
                         .foregroundColor(.white.opacity(0.6))
                 }
             }
+        }
+        .toggleStyle(EmberToggleStyle())
+    }
+}
+
+// MARK: - Custom Toggle Style
+
+private struct EmberToggleStyle: ToggleStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        HStack {
+            configuration.label
 
             Spacer()
 
-            // Custom toggle
             ZStack {
                 // Track background with glow
                 Capsule()
                     .fill(
-                        isOn ?
+                        configuration.isOn ?
                         LinearGradient(
                             colors: [.orange, .red],
                             startPoint: .leading,
@@ -54,27 +62,22 @@ struct EmberToggleView: View {
                         )
                     )
                     .frame(width: 51, height: 31)
-                    .shadow(color: isOn ? .orange.opacity(0.5) : .clear, radius: 8)
+                    .shadow(color: configuration.isOn ? .orange.opacity(0.5) : .clear, radius: 8)
 
                 // Thumb
                 Circle()
                     .fill(Color.white)
                     .frame(width: 27, height: 27)
                     .shadow(color: .black.opacity(0.2), radius: 2, y: 1)
-                    .offset(x: isOn ? 10 : -10)
+                    .offset(x: configuration.isOn ? 10 : -10)
             }
-            .onTapGesture {
-                withAnimation(AnimationConstants.quickResponse) {
-                    isOn.toggle()
-                }
-                HapticEngine.shared.toggleChanged()
-            }
+            .animation(AnimationConstants.quickResponse, value: configuration.isOn)
         }
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel(title)
-        .accessibilityValue(isOn ? "On" : "Off")
-        .accessibilityAddTraits(.isButton)
-        .accessibilityHint("Double tap to toggle")
+        .contentShape(Rectangle())
+        .onTapGesture {
+            configuration.isOn.toggle()
+            HapticEngine.shared.toggleChanged()
+        }
     }
 }
 

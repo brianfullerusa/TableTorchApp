@@ -14,26 +14,17 @@ struct BrightnessIndicatorView: View {
     var alwaysVisible: Bool = false
 
     @State private var opacity: Double = 0.0
+    @State private var fadeTask: Task<Void, Never>?
     private let dimmedOpacity: Double = 0.3
 
     /// Foreground color that contrasts with the current torch color.
-    /// Uses luminance to pick dark or light indicator elements.
     private var foregroundColor: Color {
-        let uiColor = UIColor(torchColor)
-        var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
-        uiColor.getRed(&r, green: &g, blue: &b, alpha: &a)
-        // Perceived luminance (rec. 709)
-        let luminance = 0.2126 * r + 0.7152 * g + 0.0722 * b
-        return luminance > 0.55 ? .black : .white
+        torchColor.adaptiveForeground
     }
 
     /// Shadow color opposite to the foreground for extra separation.
     private var shadowColor: Color {
-        let uiColor = UIColor(torchColor)
-        var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
-        uiColor.getRed(&r, green: &g, blue: &b, alpha: &a)
-        let luminance = 0.2126 * r + 0.7152 * g + 0.0722 * b
-        return luminance > 0.55 ? .white : .black
+        torchColor.isLight ? .white : .black
     }
 
     var body: some View {
@@ -71,7 +62,7 @@ struct BrightnessIndicatorView: View {
                     .frame(height: geometry.size.height * 0.5)
                 }
                 .padding(.trailing, 12)
-                .padding(.top, 60) // Below Dynamic Island
+                .padding(.top, geometry.safeAreaInsets.top + 8)
                 .opacity(opacity)
             }
             .frame(maxHeight: .infinity, alignment: .top)
@@ -79,20 +70,21 @@ struct BrightnessIndicatorView: View {
         .onAppear {
             opacity = alwaysVisible ? dimmedOpacity : 0.0
         }
-        .onChange(of: alwaysVisible) { newValue in
+        .onChange(of: alwaysVisible) { _, newValue in
             withAnimation(AnimationConstants.smoothTransition) {
                 opacity = newValue ? dimmedOpacity : 0.0
             }
         }
-        .onChange(of: isVisible) { newValue in
+        .onChange(of: isVisible) { _, newValue in
+            fadeTask?.cancel()
             if newValue {
-                // User is touching — full brightness
                 withAnimation(AnimationConstants.quickResponse) {
                     opacity = 1.0
                 }
             } else {
-                // User stopped touching — dim or hide after delay
-                DispatchQueue.main.asyncAfter(deadline: .now() + AnimationConstants.indicatorFadeDelay) {
+                fadeTask = Task { @MainActor in
+                    try? await Task.sleep(nanoseconds: UInt64(AnimationConstants.indicatorFadeDelay * 1_000_000_000))
+                    guard !Task.isCancelled else { return }
                     withAnimation(AnimationConstants.smoothTransition) {
                         opacity = alwaysVisible ? dimmedOpacity : 0.0
                     }

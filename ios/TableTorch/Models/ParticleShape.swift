@@ -14,11 +14,11 @@ enum ParticleShape: String, CaseIterable, Identifiable {
 
     var displayName: String {
         switch self {
-        case .embers:     return "Embers"
-        case .hearts:     return "Hearts"
-        case .stars:      return "Stars"
-        case .snowflakes: return "Snowflakes"
-        case .musicNotes: return "Music Notes"
+        case .embers:     return String(localized: "Embers")
+        case .hearts:     return String(localized: "Hearts")
+        case .stars:      return String(localized: "Stars")
+        case .snowflakes: return String(localized: "Snowflakes")
+        case .musicNotes: return String(localized: "Music Notes")
         }
     }
 
@@ -26,7 +26,7 @@ enum ParticleShape: String, CaseIterable, Identifiable {
     /// `nil` for embers, which are drawn as filled circles.
     var sfSymbolName: String? {
         switch self {
-        case .embers:     return nil
+        case .embers:     return "flame.fill"
         case .hearts:     return "heart.fill"
         case .stars:      return "star.fill"
         case .snowflakes: return "snowflake"

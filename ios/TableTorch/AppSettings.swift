@@ -38,6 +38,9 @@ final class AppSettings: ObservableObject {
 
     private var pendingSaveTask: Task<Void, Never>?
     private let saveDebounceDelay: UInt64 = 200_000_000  // 0.2 seconds
+    private var isInitializing = true
+    private var dirtyColors = false
+    private var dirtyPalettes = false
 
     @Published var defaultBrightness: CGFloat {
         didSet { saveSettings() }
@@ -46,7 +49,7 @@ final class AppSettings: ObservableObject {
         didSet { saveSettings() }
     }
     @Published var selectedColors: [Color] {
-        didSet { saveSettings() }
+        didSet { dirtyColors = true; saveSettings() }
     }
     @Published var isAngleBasedBrightnessActive: Bool {
         didSet { saveSettings() }
@@ -67,6 +70,12 @@ final class AppSettings: ObservableObject {
     @Published var enableBreathingAnimation: Bool {
         didSet { saveSettings() }
     }
+    @Published var breathingDepth: Double {
+        didSet { saveSettings() }
+    }
+    @Published var breathingCycleDuration: Double {
+        didSet { saveSettings() }
+    }
     @Published var enableEmberParticles: Bool {
         didSet { saveSettings() }
     }
@@ -82,14 +91,20 @@ final class AppSettings: ObservableObject {
 
     // Palette management
     @Published var customPalettes: [ColorPalette] = [] {
-        didSet { saveSettings() }
+        didSet {
+            dirtyPalettes = true
+            saveSettings()
+            updateAllPalettes()
+        }
     }
     @Published var activePaletteId: UUID? {
         didSet { saveSettings() }
     }
 
-    var allPalettes: [ColorPalette] {
-        ColorPalette.builtInPresets + customPalettes
+    @Published private(set) var allPalettes: [ColorPalette] = ColorPalette.builtInPresets
+
+    private func updateAllPalettes() {
+        allPalettes = ColorPalette.builtInPresets + customPalettes
     }
 
     var activePalette: ColorPalette? {
@@ -174,10 +189,12 @@ final class AppSettings: ObservableObject {
             "defaultBrightness": 1.0,
             "useDefaultBrightnessOnAppear": true,
             "preventScreenLock": true,
-            "isAngleBasedBrightnessActive": true,
+            "isAngleBasedBrightnessActive": false,
             "hasCompletedOnboarding": false,
-            "enableBreathingAnimation": true,
-            "enableEmberParticles": true,
+            "enableBreathingAnimation": false,
+            "breathingDepth": 0.12,
+            "breathingCycleDuration": 4.0,
+            "enableEmberParticles": false,
             "showQuickColorBar": true,
             "alwaysShowBrightnessIndicator": true
         ])
@@ -200,7 +217,7 @@ final class AppSettings: ObservableObject {
         let lastSelectedColorIndexValue: Int
         if defaults.object(forKey: "lastSelectedColorIndex") == nil {
             // First launch: default to the second preset when available
-            lastSelectedColorIndexValue = selectedColorsValue.indices.contains(1) ? 1 : 0
+            lastSelectedColorIndexValue = selectedColorsValue.indices.contains(3) ? 3 : 0
         } else {
             let storedIndex = defaults.integer(forKey: "lastSelectedColorIndex")
             lastSelectedColorIndexValue = selectedColorsValue.indices.contains(storedIndex) ? storedIndex : 0
@@ -209,6 +226,8 @@ final class AppSettings: ObservableObject {
         // New redesign settings
         let hasCompletedOnboardingValue = defaults.bool(forKey: "hasCompletedOnboarding")
         let enableBreathingAnimationValue = defaults.bool(forKey: "enableBreathingAnimation")
+        let breathingDepthValue = defaults.double(forKey: "breathingDepth")
+        let breathingCycleDurationValue = defaults.double(forKey: "breathingCycleDuration")
         let enableEmberParticlesValue = defaults.bool(forKey: "enableEmberParticles")
         let showQuickColorBarValue = defaults.bool(forKey: "showQuickColorBar")
         let alwaysShowBrightnessIndicatorValue = defaults.bool(forKey: "alwaysShowBrightnessIndicator")
@@ -257,28 +276,37 @@ final class AppSettings: ObservableObject {
         self.preventScreenLock = preventScreenLockValue
         self.hasCompletedOnboarding = hasCompletedOnboardingValue
         self.enableBreathingAnimation = enableBreathingAnimationValue
+        self.breathingDepth = breathingDepthValue
+        self.breathingCycleDuration = breathingCycleDurationValue
         self.enableEmberParticles = enableEmberParticlesValue
         self.showQuickColorBar = showQuickColorBarValue
         self.alwaysShowBrightnessIndicator = alwaysShowBrightnessIndicatorValue
         self.particleShape = particleShapeValue
         self.customPalettes = customPalettesValue
         self.activePaletteId = activePaletteIdValue
+
+        self.isInitializing = false
+        updateAllPalettes()
     }
 
     private func saveSettings() {
+        guard !isInitializing else { return }
         scheduleSave()
     }
 
     func flushPendingSaves() {
         pendingSaveTask?.cancel()
         pendingSaveTask = nil
+        dirtyColors = true
+        dirtyPalettes = true
         persistSettings()
     }
 
     private func scheduleSave() {
         pendingSaveTask?.cancel()
+        let delay = saveDebounceDelay
         pendingSaveTask = Task { [weak self] in
-            try? await Task.sleep(nanoseconds: self?.saveDebounceDelay ?? 0)
+            try? await Task.sleep(nanoseconds: delay)
             guard let self else { return }
             self.persistSettings()
         }
@@ -287,36 +315,42 @@ final class AppSettings: ObservableObject {
     private func persistSettings() {
         pendingSaveTask = nil
 
-        UserDefaults.standard.set(Double(defaultBrightness), forKey: "defaultBrightness")
-        UserDefaults.standard.set(useDefaultBrightnessOnAppear, forKey: "useDefaultBrightnessOnAppear")
-        UserDefaults.standard.set(preventScreenLock, forKey: "preventScreenLock")
-        
-        let codableColors = selectedColors.map { CodableColor(color: $0) }
-        if let encoded = try? JSONEncoder().encode(codableColors) {
-            UserDefaults.standard.set(encoded, forKey: "selectedColors")
+        let defaults = UserDefaults.standard
+        defaults.set(Double(defaultBrightness), forKey: "defaultBrightness")
+        defaults.set(useDefaultBrightnessOnAppear, forKey: "useDefaultBrightnessOnAppear")
+        defaults.set(preventScreenLock, forKey: "preventScreenLock")
+
+        // Only re-encode JSON arrays when they've actually changed
+        if dirtyColors {
+            let codableColors = selectedColors.map { CodableColor(color: $0) }
+            if let encoded = try? JSONEncoder().encode(codableColors) {
+                defaults.set(encoded, forKey: "selectedColors")
+            }
+            dirtyColors = false
         }
 
-        UserDefaults.standard.set(isAngleBasedBrightnessActive, forKey: "isAngleBasedBrightnessActive")
+        defaults.set(isAngleBasedBrightnessActive, forKey: "isAngleBasedBrightnessActive")
+        defaults.set(lastSelectedColorIndex, forKey: "lastSelectedColorIndex")
+        defaults.set(hasCompletedOnboarding, forKey: "hasCompletedOnboarding")
+        defaults.set(enableBreathingAnimation, forKey: "enableBreathingAnimation")
+        defaults.set(breathingDepth, forKey: "breathingDepth")
+        defaults.set(breathingCycleDuration, forKey: "breathingCycleDuration")
+        defaults.set(enableEmberParticles, forKey: "enableEmberParticles")
+        defaults.set(showQuickColorBar, forKey: "showQuickColorBar")
+        defaults.set(alwaysShowBrightnessIndicator, forKey: "alwaysShowBrightnessIndicator")
+        defaults.set(particleShape.rawValue, forKey: "particleShape")
 
-        // Save the selected index
-        UserDefaults.standard.set(lastSelectedColorIndex, forKey: "lastSelectedColorIndex")
-
-        // Save new redesign settings
-        UserDefaults.standard.set(hasCompletedOnboarding, forKey: "hasCompletedOnboarding")
-        UserDefaults.standard.set(enableBreathingAnimation, forKey: "enableBreathingAnimation")
-        UserDefaults.standard.set(enableEmberParticles, forKey: "enableEmberParticles")
-        UserDefaults.standard.set(showQuickColorBar, forKey: "showQuickColorBar")
-        UserDefaults.standard.set(alwaysShowBrightnessIndicator, forKey: "alwaysShowBrightnessIndicator")
-        UserDefaults.standard.set(particleShape.rawValue, forKey: "particleShape")
-
-        // Save palette data
-        if let encoded = try? JSONEncoder().encode(customPalettes) {
-            UserDefaults.standard.set(encoded, forKey: "customPalettes")
+        if dirtyPalettes {
+            if let encoded = try? JSONEncoder().encode(customPalettes) {
+                defaults.set(encoded, forKey: "customPalettes")
+            }
+            dirtyPalettes = false
         }
+
         if let id = activePaletteId {
-            UserDefaults.standard.set(id.uuidString, forKey: "activePaletteId")
+            defaults.set(id.uuidString, forKey: "activePaletteId")
         } else {
-            UserDefaults.standard.removeObject(forKey: "activePaletteId")
+            defaults.removeObject(forKey: "activePaletteId")
         }
     }
 
@@ -331,6 +365,13 @@ struct CodableColor: Codable, Equatable {
     let green: CGFloat
     let blue: CGFloat
     let alpha: CGFloat
+
+    static func == (lhs: CodableColor, rhs: CodableColor) -> Bool {
+        abs(lhs.red - rhs.red) < 0.01 &&
+        abs(lhs.green - rhs.green) < 0.01 &&
+        abs(lhs.blue - rhs.blue) < 0.01 &&
+        abs(lhs.alpha - rhs.alpha) < 0.01
+    }
 
     init(color: Color) {
         let uiColor = UIColor(color)

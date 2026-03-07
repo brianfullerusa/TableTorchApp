@@ -14,8 +14,12 @@ struct FloatingColorBarView: View {
 
     private let touchTarget: CGFloat = 44
 
+    private var currentColor: Color {
+        colors.indices.contains(selectedIndex) ? colors[selectedIndex] : .white
+    }
+
     var body: some View {
-        HStack(spacing: 2) {
+        HStack(spacing: 0) {
             // Color flame tokens
             ForEach(Array(colors.enumerated()), id: \.offset) { index, color in
                 FlameColorToken(
@@ -40,22 +44,18 @@ struct FloatingColorBarView: View {
             } label: {
                 Image(systemName: "gearshape.fill")
                     .font(.system(size: 16))
-                    .foregroundStyle(.white.opacity(0.6))
+                    .foregroundStyle(currentColor.adaptiveForeground.opacity(0.6))
                     .frame(width: touchTarget, height: touchTarget)
                     .contentShape(Circle())
             }
             .buttonStyle(.plain)
             .accessibilityLabel("Settings")
         }
-        .padding(.horizontal, 6)
+        .padding(.horizontal, 4)
         .padding(.vertical, 5)
         .background(
             Capsule()
-                .fill(.ultraThinMaterial)
-                .overlay(
-                    Capsule()
-                        .fill(Color.black.opacity(0.15))
-                )
+                .fill(Color.black.opacity(0.45))
                 .overlay(
                     Capsule()
                         .stroke(Color.white.opacity(0.12), lineWidth: 0.5)
@@ -195,10 +195,10 @@ private struct FlameColorToken: View {
             .contentShape(Circle())
         }
         .buttonStyle(FlameTokenButtonStyle(isPressed: $isPressed))
-        .accessibilityLabel("Color \(index + 1), \(color.accessibleName)")
+        .accessibilityLabel(Text("Color \(index + 1), \(color.accessibleName)"))
         .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : .isButton)
-        .accessibilityHint(isSelected ? "Currently selected" : "Double tap to select")
-        .onChange(of: isSelected) { selected in
+        .accessibilityHint(Text(isSelected ? LocalizedStringKey("Currently selected") : LocalizedStringKey("Double tap to select")))
+        .onChange(of: isSelected) { _, selected in
             if selected && !reduceMotion {
                 withAnimation(
                     .easeInOut(duration: AnimationConstants.breathingDuration / 2)
@@ -234,7 +234,7 @@ private struct FlameTokenButtonStyle: ButtonStyle {
 
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .onChange(of: configuration.isPressed) { pressed in
+            .onChange(of: configuration.isPressed) { _, pressed in
                 withAnimation(AnimationConstants.quickResponse) {
                     isPressed = pressed
                 }

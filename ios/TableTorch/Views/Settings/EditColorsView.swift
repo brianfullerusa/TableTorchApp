@@ -179,8 +179,8 @@ private struct EditColorRow: View {
                 )
         )
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("Torch \(index + 1) color")
-        .accessibilityHint("Tap to change color")
+        .accessibilityLabel(Text("Torch \(index + 1) color"))
+        .accessibilityHint(Text("Tap to change color"))
     }
 }
 
@@ -193,9 +193,9 @@ private extension Color {
         uiColor.getRed(&r, green: &g, blue: &b, alpha: &a)
         return String(
             format: "#%02X%02X%02X",
-            Int(r * 255),
-            Int(g * 255),
-            Int(b * 255)
+            Int((r * 255).rounded()),
+            Int((g * 255).rounded()),
+            Int((b * 255).rounded())
         )
     }
 }

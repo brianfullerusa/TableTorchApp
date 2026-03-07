@@ -11,6 +11,7 @@ import UIKit
 @main
 struct TableTorchApp: App {
     @StateObject private var brightnessManager = BrightnessManager()
+    @StateObject private var settings = AppSettings()
     @State private var showSplash = true
 
     var body: some Scene {
@@ -19,6 +20,7 @@ struct TableTorchApp: App {
                 // Main content
                 ContentView()
                     .environmentObject(brightnessManager)
+                    .environmentObject(settings)
 
                 // Overlay the splash screen if needed
                 if showSplash {

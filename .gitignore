@@ -73,3 +73,6 @@ android/.idea/
 # ===================
 shared/
 .claude/
+marketing/
+screenshots/
+issues_*.md

@@ -47,8 +47,8 @@ struct PaletteChipView: View {
         }
         .buttonStyle(.plain)
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("\(palette.name) palette\(isActive ? ", active" : "")")
-        .accessibilityHint("Tap to load this palette")
+        .accessibilityLabel(Text("\(palette.name) palette\(isActive ? String(localized: ", active") : "")"))
+        .accessibilityHint(Text("Tap to load this palette"))
         .accessibilityAddTraits(isActive ? .isSelected : [])
     }
 }
@@ -80,7 +80,7 @@ struct ModifiedChipView: View {
                 )
         )
         .foregroundColor(.orange.opacity(0.8))
-        .accessibilityLabel("Modified colors, not saved to any palette")
+        .accessibilityLabel(Text("Modified colors, not saved to any palette"))
     }
 }
 

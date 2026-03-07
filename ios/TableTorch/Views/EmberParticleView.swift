@@ -8,25 +8,48 @@
 import SwiftUI
 
 struct EmberParticleView: View {
-    let color: Color
+    let allColors: [Color]
+    let selectedIndex: Int
     let isEnabled: Bool
     var particleShape: ParticleShape = .embers
 
     @State private var particles: [Particle] = []
     @State private var lastSpawnTime: Date = Date()
+    @State private var cachedHSB: (hue: CGFloat, saturation: CGFloat, brightness: CGFloat) = (0, 0, 1)
+    @State private var cycleColorIndex: Int = 0
+    @State private var cycleTimer: Timer?
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     private let spawnInterval: Double = 1.0 / AnimationConstants.Particles.spawnRate
+    private let maxParticles = 150
+    private let colorCycleDuration: TimeInterval = 3.0
 
-    /// Particles show on all colors
-    private var isActiveColor: Bool {
-        true
+    /// The non-selected colors from the palette that particles cycle through
+    private var cycleColors: [Color] {
+        allColors.enumerated()
+            .filter { $0.offset != selectedIndex }
+            .map(\.element)
+    }
+
+    /// The current color used for spawning new particles
+    private var currentCycleColor: Color {
+        let colors = cycleColors
+        guard !colors.isEmpty else { return allColors.first ?? .orange }
+        return colors[cycleColorIndex % colors.count]
     }
 
     var body: some View {
         GeometryReader { geometry in
-            TimelineView(.animation) { timeline in
+            TimelineView(.animation(minimumInterval: 1.0 / 30.0)) { timeline in
                 Canvas { context, size in
+                    // Resolve SF Symbol once, reuse for all particles
+                    let resolvedSymbol: GraphicsContext.ResolvedImage?
+                    if let symbolName = particleShape.sfSymbolName {
+                        resolvedSymbol = context.resolve(Image(systemName: symbolName))
+                    } else {
+                        resolvedSymbol = nil
+                    }
+
                     for particle in particles {
                         let elapsed = timeline.date.timeIntervalSince(particle.spawnTime)
                         let progress = elapsed / particle.lifetime
@@ -56,10 +79,9 @@ struct EmberParticleView: View {
                         // Glow (larger, faded copy behind the main shape)
                         context.opacity = opacity * 0.6
                         let glowRect = rect.insetBy(dx: -particleSize * 1.0, dy: -particleSize * 1.0)
-                        if let symbolName = particleShape.sfSymbolName {
-                            var glowResolved = context.resolve(Image(systemName: symbolName))
-                            glowResolved.shading = .color(particle.color)
-                            context.draw(glowResolved, in: glowRect)
+                        if var glow = resolvedSymbol {
+                            glow.shading = .color(particle.color)
+                            context.draw(glow, in: glowRect)
                         } else {
                             context.fill(
                                 Circle().path(in: glowRect),
@@ -69,10 +91,9 @@ struct EmberParticleView: View {
 
                         // Draw the particle shape
                         context.opacity = opacity
-                        if let symbolName = particleShape.sfSymbolName {
-                            var resolved = context.resolve(Image(systemName: symbolName))
-                            resolved.shading = .color(particle.color)
-                            context.draw(resolved, in: rect)
+                        if var main = resolvedSymbol {
+                            main.shading = .color(particle.color)
+                            context.draw(main, in: rect)
                         } else {
                             context.fill(
                                 Circle().path(in: rect),
@@ -81,19 +102,36 @@ struct EmberParticleView: View {
                         }
                     }
                 }
-                .onChange(of: timeline.date) { _ in
-                    updateParticles(in: geometry.size, at: timeline.date)
+                .onChange(of: timeline.date) { _, newDate in
+                    updateParticles(in: geometry.size, at: newDate)
                 }
             }
         }
         .allowsHitTesting(false)
         .accessibilityHidden(true)
-        .opacity(isEnabled && isActiveColor && !reduceMotion ? 1 : 0)
-        .animation(.easeInOut(duration: 0.5), value: isEnabled && isActiveColor)
+        .opacity(isEnabled && !reduceMotion ? 1 : 0)
+        .animation(.easeInOut(duration: 0.5), value: isEnabled)
+        .onAppear {
+            cacheHSB()
+            startCycleTimer()
+        }
+        .onDisappear { stopCycleTimer() }
+        .onChange(of: currentCycleColor) { _, _ in cacheHSB() }
+        .onChange(of: selectedIndex) { _, _ in
+            cycleColorIndex = 0
+            cacheHSB()
+        }
+        .onChange(of: allColors) { _, _ in
+            cycleColorIndex = 0
+            cacheHSB()
+        }
+        .onChange(of: isEnabled) { _, newValue in
+            if newValue { startCycleTimer() } else { stopCycleTimer() }
+        }
     }
 
     private func updateParticles(in size: CGSize, at date: Date) {
-        guard isEnabled && isActiveColor && !reduceMotion else {
+        guard isEnabled && !reduceMotion else {
             particles.removeAll()
             return
         }
@@ -103,8 +141,8 @@ struct EmberParticleView: View {
             date.timeIntervalSince(particle.spawnTime) > particle.lifetime
         }
 
-        // Spawn new particles
-        if date.timeIntervalSince(lastSpawnTime) >= spawnInterval {
+        // Spawn new particles (capped to prevent unbounded growth)
+        if date.timeIntervalSince(lastSpawnTime) >= spawnInterval && particles.count < maxParticles {
             spawnParticle(in: size, at: date)
             lastSpawnTime = date
         }
@@ -122,28 +160,43 @@ struct EmberParticleView: View {
         particles.append(particle)
     }
 
-    /// Generate a color variation for the ember
-    private var emberColor: Color {
-        let uiColor = UIColor(color)
-        var hue: CGFloat = 0
-        var saturation: CGFloat = 0
-        var brightness: CGFloat = 0
-        uiColor.getHue(&hue, saturation: &saturation, brightness: &brightness, alpha: nil)
+    private func cacheHSB() {
+        let uiColor = UIColor(currentCycleColor)
+        var h: CGFloat = 0, s: CGFloat = 0, b: CGFloat = 0
+        uiColor.getHue(&h, saturation: &s, brightness: &b, alpha: nil)
+        cachedHSB = (h, s, b)
+    }
 
-        // Slightly vary the hue and brightness
+    private func startCycleTimer() {
+        stopCycleTimer()
+        cycleTimer = Timer.scheduledTimer(withTimeInterval: colorCycleDuration, repeats: true) { _ in
+            Task { @MainActor in
+                let count = cycleColors.count
+                guard count > 0 else { return }
+                cycleColorIndex = (cycleColorIndex + 1) % count
+            }
+        }
+    }
+
+    private func stopCycleTimer() {
+        cycleTimer?.invalidate()
+        cycleTimer = nil
+    }
+
+    /// Generate a color variation for the ember using cached HSB
+    private var emberColor: Color {
         let hueVariation = CGFloat.random(in: -0.02...0.02)
         let brightnessVariation = CGFloat.random(in: 0.8...1.2)
 
         return Color(
-            hue: Double((hue + hueVariation).clamped(to: 0...1)),
-            saturation: Double(saturation),
-            brightness: Double((brightness * brightnessVariation).clamped(to: 0...1))
+            hue: Double((cachedHSB.hue + hueVariation).clamped(to: 0...1)),
+            saturation: Double(cachedHSB.saturation),
+            brightness: Double((cachedHSB.brightness * brightnessVariation).clamped(to: 0...1))
         )
     }
 }
 
-private struct Particle: Identifiable {
-    let id = UUID()
+private struct Particle {
     let startX: CGFloat
     let startY: CGFloat
     let size: CGFloat
@@ -161,7 +214,12 @@ private extension CGFloat {
 #Preview {
     ZStack {
         Color.orange
-        EmberParticleView(color: .orange, isEnabled: true, particleShape: .embers)
+        EmberParticleView(
+            allColors: [.orange, .red, .yellow, .blue, .green, .purple],
+            selectedIndex: 0,
+            isEnabled: true,
+            particleShape: .embers
+        )
     }
     .ignoresSafeArea()
 }
