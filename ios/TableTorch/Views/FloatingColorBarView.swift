@@ -50,6 +50,7 @@ struct FloatingColorBarView: View {
             }
             .buttonStyle(.plain)
             .accessibilityLabel("Settings")
+            .accessibilityIdentifier("settingsButton")
         }
         .padding(.horizontal, 4)
         .padding(.vertical, 5)
@@ -198,6 +199,7 @@ private struct FlameColorToken: View {
         .accessibilityLabel(Text("Color \(index + 1), \(color.accessibleName)"))
         .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : .isButton)
         .accessibilityHint(Text(isSelected ? LocalizedStringKey("Currently selected") : LocalizedStringKey("Double tap to select")))
+        .accessibilityIdentifier("colorToken_\(index)")
         .onChange(of: isSelected) { _, selected in
             if selected && !reduceMotion {
                 withAnimation(

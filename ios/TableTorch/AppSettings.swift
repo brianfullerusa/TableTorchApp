@@ -142,6 +142,12 @@ final class AppSettings: ObservableObject {
         HapticEngine.shared.colorChanged()
     }
 
+    /// Load a palette without haptic feedback or animation (used in screenshot mode).
+    func loadPaletteWithoutHaptic(_ palette: ColorPalette) {
+        selectedColors = palette.swiftUIColors
+        activePaletteId = palette.id
+    }
+
     func deletePalette(id: UUID) {
         customPalettes.removeAll { $0.id == id }
         if activePaletteId == id {
@@ -284,6 +290,42 @@ final class AppSettings: ObservableObject {
         self.particleShape = particleShapeValue
         self.customPalettes = customPalettesValue
         self.activePaletteId = activePaletteIdValue
+
+        // Screenshot mode: override settings from launch arguments.
+        // Must happen here (not in App.init) because @StateObject creates
+        // the instance lazily -- App.init would configure a throwaway copy.
+        let args = ProcessInfo.processInfo.arguments
+        if args.contains("-uiScreenshotMode") {
+            self.alwaysShowBrightnessIndicator = true
+            self.enableBreathingAnimation = false
+
+            if let idx = args.firstIndex(of: "-uiPalette"), idx + 1 < args.count {
+                switch args[idx + 1] {
+                case "lowLight":
+                    self.selectedColors = ColorPalette.lowLight.swiftUIColors
+                    self.activePaletteId = ColorPalette.lowLight.id
+                case "bright":
+                    self.selectedColors = ColorPalette.bright.swiftUIColors
+                    self.activePaletteId = ColorPalette.bright.id
+                case "party":
+                    self.selectedColors = ColorPalette.party.swiftUIColors
+                    self.activePaletteId = ColorPalette.party.id
+                default: break
+                }
+            }
+
+            if let idx = args.firstIndex(of: "-uiColorIndex"), idx + 1 < args.count,
+               let colorIndex = Int(args[idx + 1]),
+               self.selectedColors.indices.contains(colorIndex) {
+                self.lastSelectedColorIndex = colorIndex
+            }
+
+            if args.contains("-uiEmberParticles") {
+                self.enableEmberParticles = true
+            } else {
+                self.enableEmberParticles = false
+            }
+        }
 
         self.isInitializing = false
         updateAllPalettes()

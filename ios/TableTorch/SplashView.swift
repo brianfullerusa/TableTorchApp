@@ -33,6 +33,8 @@ struct SplashView: View {
 
     // MARK: - Body
 
+    private static let isScreenshotSplash = ProcessInfo.processInfo.arguments.contains("-uiScreenshotSplash")
+
     var body: some View {
         ZStack {
             // Layer 0: Pure black background
@@ -52,7 +54,7 @@ struct SplashView: View {
             .offset(y: -20)
         }
         .onAppear {
-            if reduceMotion {
+            if Self.isScreenshotSplash || reduceMotion {
                 showEverythingImmediately()
             } else {
                 beginIgnitionSequence()

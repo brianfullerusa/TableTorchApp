@@ -75,4 +75,6 @@ shared/
 .claude/
 marketing/
 screenshots/
+.screenshot_results/
+.screenshot_derived_data/
 issues_*.md

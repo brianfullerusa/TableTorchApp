@@ -163,6 +163,7 @@ struct ContentView: View {
                     .contentShape(Circle())
             }
             .accessibilityLabel("Settings")
+            .accessibilityIdentifier("settingsButton")
             .padding(.trailing, 16)
             .padding(.bottom, 16)
         }

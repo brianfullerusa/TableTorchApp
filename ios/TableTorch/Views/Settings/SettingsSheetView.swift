@@ -58,6 +58,7 @@ struct SettingsSheetView: View {
             .toolbarBackground(.ultraThinMaterial, for: .navigationBar)
             .toolbarBackground(.visible, for: .navigationBar)
         }
+        .accessibilityIdentifier("settingsSheet")
         .presentationDetents([.medium, .large])
         .presentationSizing(.form)
         .presentationDragIndicator(.visible)
