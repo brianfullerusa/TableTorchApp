@@ -1,10 +1,9 @@
 //
-//  MenuReaderApp.swift
+//  TableTorchApp.swift
 //  TableTorch
 //
-//  Created by Brian Fuller on 1/4/25.
+//  Main app entry point with animated splash transition
 //
-
 
 import SwiftUI
 import UIKit
@@ -12,9 +11,17 @@ import UIKit
 @main
 struct TableTorchApp: App {
     @StateObject private var brightnessManager = BrightnessManager()
-
-    // Control splash visibility
+    @StateObject private var settings = AppSettings()
     @State private var showSplash = true
+
+    private static let isScreenshotMode = ProcessInfo.processInfo.arguments.contains("-uiScreenshotMode")
+    private static let isScreenshotSplash = ProcessInfo.processInfo.arguments.contains("-uiScreenshotSplash")
+
+    init() {
+        if Self.isScreenshotMode {
+            UIView.setAnimationsEnabled(false)
+        }
+    }
 
     var body: some Scene {
         WindowGroup {
@@ -22,20 +29,24 @@ struct TableTorchApp: App {
                 // Main content
                 ContentView()
                     .environmentObject(brightnessManager)
+                    .environmentObject(settings)
 
                 // Overlay the splash screen if needed
                 if showSplash {
-                    SplashView()
-                        .transition(.opacity)
-                        .allowsHitTesting(false)
+                    SplashView(onComplete: {
+                        // In screenshot-splash mode, don't auto-dismiss
+                        guard !Self.isScreenshotSplash else { return }
+                        withAnimation(AnimationConstants.smoothTransition) {
+                            showSplash = false
+                        }
+                    })
+                    .transition(.opacity)
+                    .allowsHitTesting(false)
                 }
             }
             .onAppear {
-                // Hide splash shortly after launch to match iOS guidance
-                DispatchQueue.main.asyncAfter(deadline: .now() + 1.4) {
-                    withAnimation {
-                        showSplash = false
-                    }
+                if Self.isScreenshotMode && !Self.isScreenshotSplash {
+                    showSplash = false
                 }
             }
         }
