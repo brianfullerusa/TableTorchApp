@@ -8,19 +8,11 @@
     <cloud-backup>
         <!-- Include DataStore preferences -->
         <include domain="file" path="datastore/" />
-
-        <!-- Exclude cache and temporary files -->
-        <exclude domain="cache" path="." />
-        <exclude domain="no_backup" path="." />
     </cloud-backup>
 
     <!-- Rules for device-to-device transfer -->
     <device-transfer>
         <!-- Include DataStore preferences -->
         <include domain="file" path="datastore/" />
-
-        <!-- Exclude cache and temporary files -->
-        <exclude domain="cache" path="." />
-        <exclude domain="no_backup" path="." />
     </device-transfer>
 </data-extraction-rules>

@@ -19,6 +19,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.compose.rememberNavController
+import com.rockyriverapps.tabletorch.data.AppSettings
 import com.rockyriverapps.tabletorch.data.PreferencesManager
 import com.rockyriverapps.tabletorch.navigation.TableTorchNavGraph
 import com.rockyriverapps.tabletorch.sensors.TiltSensorManager
@@ -38,13 +39,14 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
-        // Initialize ViewModel with dependencies (PreferencesManager is a singleton)
+        // Initialize ViewModel with dependencies
+        // TiltSensorManager is created lazily inside the Factory to avoid leaking
+        // a new instance on every Activity recreation (ViewModelProvider caches the VM).
         val preferencesManager = PreferencesManager.getInstance(applicationContext)
-        val tiltSensorManager = TiltSensorManager(applicationContext)
 
         viewModel = ViewModelProvider(
             this,
-            MainViewModel.Factory(preferencesManager, tiltSensorManager)
+            MainViewModel.Factory(preferencesManager, applicationContext)
         )[MainViewModel::class.java]
 
         // Observe settings changes for screen lock prevention
@@ -74,40 +76,12 @@ class MainActivity : ComponentActivity() {
                 var showSplash by remember { mutableStateOf(true) }
                 val navController = rememberNavController()
 
-                // Tilt sensor lifecycle and brightness updates are handled in ViewModel init block
-                // This keeps sensor logic out of Compose and properly scoped to ViewModel lifecycle
-
                 Box(modifier = Modifier.fillMaxSize()) {
                     // Main content (always rendered underneath)
                     if (!showSplash) {
                         TableTorchNavGraph(
                             navController = navController,
-                            settingsFlow = viewModel.settings,
-                            brightnessFlow = viewModel.currentBrightness,
-                            onBrightnessChange = { brightnessValue ->
-                                viewModel.setBrightness(brightnessValue)
-                            },
-                            onColorSelect = { index ->
-                                viewModel.updateLastSelectedColorIndex(index)
-                            },
-                            onDefaultBrightnessChange = { brightnessValue ->
-                                viewModel.updateDefaultBrightness(brightnessValue)
-                            },
-                            onUseDefaultBrightnessOnLaunchChange = { enabled ->
-                                viewModel.updateUseDefaultBrightnessOnLaunch(enabled)
-                            },
-                            onPreventScreenLockChange = { enabled ->
-                                viewModel.updatePreventScreenLock(enabled)
-                            },
-                            onAngleBasedBrightnessChange = { enabled ->
-                                viewModel.updateAngleBasedBrightness(enabled)
-                            },
-                            onColorChange = { index, colorValue ->
-                                viewModel.updateColor(index, colorValue)
-                            },
-                            onRestoreDefaultColors = {
-                                viewModel.restoreDefaultColors()
-                            }
+                            viewModel = viewModel
                         )
                     }
 
@@ -131,11 +105,10 @@ class MainActivity : ComponentActivity() {
         if (originalBrightness < 0) {
             originalBrightness = window.attributes.screenBrightness
             if (originalBrightness < 0) {
-                originalBrightness = 0.85f // Default if system controlled
+                originalBrightness = AppSettings.DEFAULT.defaultBrightness
             }
         }
         // Sensor lifecycle is managed by ViewModel based on settings
-        // Start sensor if coming back from background with feature enabled
         viewModel.startTiltSensorIfEnabled()
     }
 
@@ -148,7 +121,6 @@ class MainActivity : ComponentActivity() {
     override fun onStop() {
         super.onStop()
         // Restore original brightness when app goes to background
-        // This is more reliable than onDestroy which may not have a valid window
         if (originalBrightness >= 0) {
             applyBrightness(originalBrightness)
         } else {

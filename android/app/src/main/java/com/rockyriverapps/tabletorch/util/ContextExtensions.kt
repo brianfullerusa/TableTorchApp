@@ -3,11 +3,6 @@ package com.rockyriverapps.tabletorch.util
 import android.app.Activity
 import android.content.Context
 import android.content.ContextWrapper
-import android.view.Window
-
-/**
- * Utility extension functions for Context.
- */
 
 /**
  * Finds the Activity from a Context, traversing ContextWrapper hierarchy if needed.
@@ -23,11 +18,3 @@ fun Context.findActivity(): Activity? {
     }
     return null
 }
-
-/**
- * Finds the Window from a Context.
- * Returns null if no Activity/Window is found.
- *
- * @return The Window if found, null otherwise
- */
-fun Context.findWindow(): Window? = findActivity()?.window

@@ -49,6 +49,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.res.painterResource
@@ -122,103 +123,6 @@ private object ColorGridPresets {
 }
 
 /**
- * Color picker component with flame icon.
- * Shows current color and opens a full color picker dialog when tapped.
- */
-@Composable
-fun FlameColorPicker(
-    label: String,
-    colorValue: Long,
-    onColorChange: (Long) -> Unit,
-    modifier: Modifier = Modifier
-) {
-    var showDialog by remember { mutableStateOf(false) }
-    val color = Color(colorValue.toULong())
-
-    Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .clickable { showDialog = true }
-            .padding(vertical = 12.dp, horizontal = 8.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween
-    ) {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.bodyLarge,
-            color = MaterialTheme.colorScheme.onBackground
-        )
-
-        Icon(
-            painter = painterResource(id = R.drawable.ic_flame_filled),
-            contentDescription = stringResource(R.string.select_color_description, label),
-            tint = color,
-            modifier = Modifier.size(32.dp)
-        )
-    }
-
-    if (showDialog) {
-        FullColorPickerDialog(
-            initialColor = color,
-            onColorSelected = { newColor ->
-                onColorChange(newColor.value.toLong())
-                showDialog = false
-            },
-            onDismiss = { showDialog = false }
-        )
-    }
-}
-
-/**
- * Compact color picker optimized for 3-column grid layout in Settings screen.
- * Uses reduced padding (8dp vertical instead of 12dp) while maintaining
- * 48dp minimum touch target for accessibility compliance.
- */
-@Composable
-fun CompactFlameColorPicker(
-    label: String,
-    colorValue: Long,
-    onColorChange: (Long) -> Unit,
-    modifier: Modifier = Modifier
-) {
-    var showDialog by remember { mutableStateOf(false) }
-    val color = Color(colorValue.toULong())
-
-    Row(
-        modifier = modifier
-            .sizeIn(minHeight = 48.dp) // Maintain accessibility touch target
-            .clickable { showDialog = true }
-            .padding(vertical = 8.dp, horizontal = 4.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween
-    ) {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onBackground
-        )
-
-        Icon(
-            painter = painterResource(id = R.drawable.ic_flame_filled),
-            contentDescription = stringResource(R.string.select_color_description, label),
-            tint = color,
-            modifier = Modifier.size(28.dp)
-        )
-    }
-
-    if (showDialog) {
-        FullColorPickerDialog(
-            initialColor = color,
-            onColorSelected = { newColor ->
-                onColorChange(newColor.value.toLong())
-                showDialog = false
-            },
-            onDismiss = { showDialog = false }
-        )
-    }
-}
-
-/**
  * Full-featured color picker dialog with Grid, Spectrum, and Sliders tabs.
  */
 @Composable
@@ -228,20 +132,23 @@ fun FullColorPickerDialog(
     onDismiss: () -> Unit
 ) {
     // Convert initial color to HSV for easier manipulation
-    val hsv = remember { floatArrayOf(0f, 0f, 0f) }
-    android.graphics.Color.colorToHSV(
-        android.graphics.Color.argb(
-            (initialColor.alpha * 255).toInt(),
-            (initialColor.red * 255).toInt(),
-            (initialColor.green * 255).toInt(),
-            (initialColor.blue * 255).toInt()
-        ),
-        hsv
-    )
+    val hsv = remember(initialColor) {
+        floatArrayOf(0f, 0f, 0f).also { arr ->
+            android.graphics.Color.colorToHSV(
+                android.graphics.Color.argb(
+                    (initialColor.alpha * 255).toInt(),
+                    (initialColor.red * 255).toInt(),
+                    (initialColor.green * 255).toInt(),
+                    (initialColor.blue * 255).toInt()
+                ),
+                arr
+            )
+        }
+    }
 
-    var hue by remember { mutableFloatStateOf(hsv[0]) }
-    var saturation by remember { mutableFloatStateOf(hsv[1]) }
-    var value by remember { mutableFloatStateOf(hsv[2]) }
+    var hue by remember(initialColor) { mutableFloatStateOf(hsv[0]) }
+    var saturation by remember(initialColor) { mutableFloatStateOf(hsv[1]) }
+    var value by remember(initialColor) { mutableFloatStateOf(hsv[2]) }
 
     // RGB values for slider mode
     var red by remember { mutableFloatStateOf(initialColor.red) }
@@ -255,14 +162,14 @@ fun FullColorPickerDialog(
         derivedStateOf {
             when (selectedTab) {
                 2 -> Color(red, green, blue) // Sliders use RGB
-                else -> Color.hsv(hue, saturation, value) // Grid and Spectrum use HSV
+                else -> Color.hsv(hue % 360f, saturation, value) // Grid and Spectrum use HSV
             }
         }
     }
 
     // Sync RGB when HSV changes (for non-slider modes)
     fun syncRgbFromHsv() {
-        val c = Color.hsv(hue, saturation, value)
+        val c = Color.hsv(hue % 360f, saturation, value)
         red = c.red
         green = c.green
         blue = c.blue
@@ -481,7 +388,7 @@ private fun ColorGridPicker(
             val luminance = 0.299f * color.red + 0.587f * color.green + 0.114f * color.blue
             val checkmarkColor = if (luminance > 0.5f) Color.Black else Color.White
             val colorName = ColorGridPresets.colorNames.getOrElse(index) { "Color ${index + 1}" }
-            val selectedText = if (isSelected) ", selected" else ""
+            val selectedSuffix = if (isSelected) stringResource(R.string.color_selected_suffix) else ""
 
             Box(
                 modifier = Modifier
@@ -496,7 +403,7 @@ private fun ColorGridPicker(
                     )
                     .clickable { onColorSelect(color) }
                     .semantics {
-                        contentDescription = "$colorName$selectedText"
+                        contentDescription = "$colorName$selectedSuffix"
                     },
                 contentAlignment = Alignment.Center
             ) {
@@ -569,13 +476,15 @@ private fun SaturationValuePanel(
 ) {
     val satPercent = (saturation * 100).toInt()
     val valPercent = (value * 100).toInt()
+    val satBrightDesc = stringResource(R.string.saturation_brightness_picker, satPercent, valPercent)
+    val satBrightState = stringResource(R.string.saturation_brightness_state, satPercent, valPercent)
 
     Box(
         modifier = Modifier
             .fillMaxSize()
             .semantics {
-                contentDescription = "Color saturation and brightness picker. Saturation $satPercent percent, Brightness $valPercent percent"
-                stateDescription = "Saturation $satPercent percent, Brightness $valPercent percent"
+                contentDescription = satBrightDesc
+                stateDescription = satBrightState
             }
             .pointerInput(Unit) {
                 detectTapGestures { offset ->
@@ -595,7 +504,7 @@ private fun SaturationValuePanel(
     ) {
         Canvas(modifier = Modifier.fillMaxSize()) {
             // Draw saturation gradient (white to hue color)
-            val hueColor = Color.hsv(hue, 1f, 1f)
+            val hueColor = Color.hsv(hue % 360f, 1f, 1f)
             drawRect(
                 brush = Brush.horizontalGradient(
                     colors = listOf(Color.White, hueColor)
@@ -637,24 +546,26 @@ private fun HueSlider(
     modifier: Modifier = Modifier
 ) {
     val hueInt = hue.toInt()
+    val hueDesc = stringResource(R.string.hue_slider_description, hueInt)
+    val hueState = stringResource(R.string.hue_slider_state, hueInt)
 
     Box(
         modifier = modifier
             .clip(RoundedCornerShape(16.dp))
             .semantics {
-                contentDescription = "Hue color slider, $hueInt degrees"
-                stateDescription = "Hue $hueInt degrees"
+                contentDescription = hueDesc
+                stateDescription = hueState
             }
             .pointerInput(Unit) {
                 detectTapGestures { offset ->
-                    val h = (offset.x / size.width * 360f).coerceIn(0f, 360f)
+                    val h = (offset.x / size.width * 360f).coerceIn(0f, 360f) % 360f
                     onHueChange(h)
                 }
             }
             .pointerInput(Unit) {
                 detectDragGestures { change, _ ->
                     change.consume()
-                    val h = (change.position.x / size.width * 360f).coerceIn(0f, 360f)
+                    val h = (change.position.x / size.width * 360f).coerceIn(0f, 360f) % 360f
                     onHueChange(h)
                 }
             }
@@ -675,7 +586,7 @@ private fun HueSlider(
                 style = Stroke(width = 3.dp.toPx())
             )
             drawCircle(
-                color = Color.hsv(hue, 1f, 1f),
+                color = Color.hsv(hue % 360f, 1f, 1f),
                 radius = 10.dp.toPx(),
                 center = Offset(selectorX, size.height / 2)
             )
@@ -814,6 +725,9 @@ private fun ColorChannelSlider(
 ) {
     val valueInt = (value * 255).toInt()
 
+    val channelDesc = stringResource(R.string.color_channel_slider_description, label, valueInt)
+    val channelState = stringResource(R.string.color_channel_slider_state, label, valueInt)
+
     Column {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -842,8 +756,8 @@ private fun ColorChannelSlider(
                     brush = Brush.horizontalGradient(gradientColors)
                 )
                 .semantics {
-                    contentDescription = "$label color channel slider, value $valueInt"
-                    stateDescription = "$label value $valueInt"
+                    contentDescription = channelDesc
+                    stateDescription = channelState
                 }
                 .pointerInput(Unit) {
                     detectTapGestures { offset ->

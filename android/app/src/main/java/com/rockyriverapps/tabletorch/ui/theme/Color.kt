@@ -29,36 +29,21 @@ val TorchErrorContainerLight = Color(0xFFFFDAD6)
 val TorchOutlineLight = Color(0xFF857370)
 val TorchOutlineVariantLight = Color(0xFFD8C2BE)
 
-/**
- * Extension function to determine the appropriate contrasting text color
- * based on the luminance of the background color.
- * Uses the relative luminance formula for perceived brightness.
- * Returns Black for light backgrounds and White for dark backgrounds.
- */
-fun Color.contrastingTextColor(): Color {
-    val luminance = (0.299f * red + 0.587f * green + 0.114f * blue)
-    return if (luminance > 0.5f) Color.Black else Color.White
-}
-
 // Default Torch Colors (matching iOS)
 object TorchColors {
-    val White = Color(0xFFFFFFFF)
-    val SoftWhite = Color(0xFFFFC896)      // RGB(255, 200, 150)
-    val MintGreen = Color(0xFF98FF98)      // RGB(152, 255, 152)
-    val SteelBlue = Color(0xFF4682B4)      // RGB(70, 130, 180)
-    val Red = Color(0xFFFF0000)            // RGB(255, 0, 0)
-    val DarkRed = Color(0xFF800000)        // RGB(128, 0, 0)
-
-    /** Immutable list of default colors for Compose stability */
+    /** Immutable list of default colors as ARGB Long values for Compose stability */
     val defaultColorsImmutable: ImmutableList<Long> = persistentListOf(
-        White.value.toLong(),
-        SoftWhite.value.toLong(),
-        MintGreen.value.toLong(),
-        SteelBlue.value.toLong(),
-        Red.value.toLong(),
-        DarkRed.value.toLong()
+        0xFFFFFFFFL,   // White
+        0xFFFFC896L,   // Soft White
+        0xFF98FF98L,   // Mint Green
+        0xFF4682B4L,   // Steel Blue
+        0xFFFF0000L,   // Red
+        0xFF800000L    // Dark Red
     )
 
     /** Regular list for backward compatibility */
     val defaultColors: List<Long> = defaultColorsImmutable
 }
+
+/** Convert a Long ARGB color value to a Compose Color. */
+fun Long.toComposeColor(): Color = Color(this.toInt())

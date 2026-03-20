@@ -15,6 +15,7 @@
 
     <!-- Settings Screen -->
     <string name="settings_title">Settings</string>
+    <string name="settings_done">Done</string>
     <string name="back">Back</string>
 
     <!-- Settings: Torch Colors Section -->
@@ -24,18 +25,44 @@
     <string name="restore_default_colors">Restore Default Colors</string>
 
     <!-- Settings: Brightness Section -->
+    <string name="settings_section_brightness">Brightness</string>
     <string name="section_brightness_settings">Brightness Settings</string>
     <string name="section_brightness_settings_subtitle">Control brightness behavior</string>
     <string name="default_brightness">Default Brightness</string>
-    <string name="use_default_brightness_on_launch">Use Default Brightness on Launch</string>
+    <string name="use_default_brightness_on_launch">Use Default on Launch</string>
     <string name="prevent_screen_lock">Prevent Screen Lock</string>
-    <string name="prevent_screen_lock_description">When enabled, Table Torch will keep the screen on and prevent auto-lock.</string>
+    <string name="prevent_screen_lock_description">Keep the screen on while Table Torch is active</string>
+    <string name="settings_always_show_brightness">Always Show Brightness</string>
+    <string name="settings_always_show_brightness_desc">Show brightness slider on the main screen</string>
 
     <!-- Settings: Tilt Section -->
     <string name="section_tilt_control">Tilt Brightness Control</string>
     <string name="section_tilt_control_subtitle">Adjust brightness by tilting your device</string>
-    <string name="enable_tilt_brightness">Enable Tilt Brightness Control</string>
-    <string name="tilt_description">Tilt phone: Vertical=30% brightness, Flat=100% brightness</string>
+    <string name="enable_tilt_brightness">Tilt Brightness Control</string>
+    <string name="tilt_description">Vertical = 30%% brightness, Flat = 100%% brightness</string>
+
+    <!-- Settings: Behavior Section -->
+    <string name="settings_section_behavior">Behavior</string>
+    <string name="settings_quick_color_bar">Quick Color Bar</string>
+    <string name="settings_quick_color_bar_desc">Show the floating color selection bar</string>
+
+    <!-- Settings: Visual Effects Section -->
+    <string name="settings_section_visual_effects">Visual Effects</string>
+    <string name="settings_breathing_animation">Breathing Animation</string>
+    <string name="settings_breathing_animation_desc">Subtle pulsing light effect</string>
+    <string name="settings_breathing_depth">Breathing Depth</string>
+    <string name="settings_breathing_cycle">Cycle Duration</string>
+    <string name="settings_ember_particles">Ember Particles</string>
+    <string name="settings_ember_particles_desc">Floating particles on warm colors</string>
+    <string name="settings_particle_shape">Particle Shape</string>
+
+    <!-- Brightness Indicator -->
+    <string name="brightness_indicator">Brightness indicator</string>
+    <string name="brightness_percent">%1$d%%</string>
+    <string name="double_tap_brightness">Double tap to toggle max brightness</string>
+    <string name="swipe_adjust_brightness">Swipe vertically to adjust brightness</string>
+    <string name="settings_always_show_brightness_indicator">Always Show Brightness</string>
+    <string name="settings_always_show_brightness_indicator_desc">Keep brightness indicator visible on main screen</string>
 
     <!-- Color Picker -->
     <string name="select_color">Select Color</string>
@@ -51,4 +78,32 @@
     <string name="blue">Blue</string>
     <string name="hex_format">Hex: %1$s</string>
     <string name="select_color_description">Select %1$s color</string>
+
+    <!-- Palettes -->
+    <string name="palettes_title">Palettes</string>
+    <string name="manage_palettes">Palettes</string>
+    <string name="create_palette">New Palette</string>
+    <string name="create_palette_description">Save your current colors as a new palette.</string>
+    <string name="palette_name">Palette Name</string>
+    <string name="create">Create</string>
+    <string name="rename_palette">Rename Palette</string>
+    <string name="rename">Rename</string>
+    <string name="delete_palette">Delete Palette</string>
+    <string name="delete">Delete</string>
+    <string name="delete_palette_confirmation">Are you sure you want to delete \"%1$s\"? This cannot be undone.</string>
+    <string name="duplicate_palette">Duplicate Palette</string>
+    <string name="built_in_palette">Built-in preset</string>
+    <string name="active">Active</string>
+    <string name="palette_active_suffix">, active</string>
+
+    <!-- Accessibility -->
+    <string name="toggle_on">On</string>
+    <string name="toggle_off">Off</string>
+    <string name="color_selected_suffix">, selected</string>
+    <string name="saturation_brightness_picker">Color saturation and brightness picker. Saturation %1$d percent, Brightness %2$d percent</string>
+    <string name="saturation_brightness_state">Saturation %1$d percent, Brightness %2$d percent</string>
+    <string name="hue_slider_description">Hue color slider, %1$d degrees</string>
+    <string name="hue_slider_state">Hue %1$d degrees</string>
+    <string name="color_channel_slider_description">%1$s color channel slider, value %2$d</string>
+    <string name="color_channel_slider_state">%1$s value %2$d</string>
 </resources>

@@ -1,0 +1,10 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Flame silhouette -->
+    <path
+        android:fillColor="#000000"
+        android:pathData="M54,24c0,0 -3.5,8.5 -3.5,8.5c-2.8,6.8 -7,12.5 -10.5,19c-3.5,6.5 -6,13.5 -6,20c0,11 9,20 20,20s20,-9 20,-20c0,-6.5 -2.5,-13.5 -6,-20c-3.5,-6.5 -7.7,-12.2 -10.5,-19C56,28 54,24 54,24z" />
+</vector>

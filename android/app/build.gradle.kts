@@ -16,14 +16,22 @@ if (keystorePropertiesFile.exists()) {
 
 android {
     namespace = "com.rockyriverapps.tabletorch"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.rockyriverapps.tabletorch"
         minSdk = 24
         targetSdk = 35
+        // Versioning strategy:
+        // - versionCode: increment by 1 for every Play Store release (monotonically increasing)
+        // - versionName: use semantic versioning (MAJOR.MINOR.PATCH)
+        //   MAJOR = breaking / redesign, MINOR = new features, PATCH = bug fixes
+        // CI/CD can automate versionCode via: (MAJOR*10000 + MINOR*100 + PATCH)
         versionCode = 1
         versionName = "1.0"
+
+        // Only keep English and Spanish resources; strip all other library translations
+        resourceConfigurations += listOf("en", "es")
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -86,6 +94,7 @@ android {
         compose = true
         buildConfig = true
     }
+    buildToolsVersion = "36.1.0"
 }
 
 dependencies {

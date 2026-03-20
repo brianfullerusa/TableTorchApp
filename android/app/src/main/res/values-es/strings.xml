@@ -34,7 +34,7 @@
     <string name="section_tilt_control">Control de Brillo por Inclinación</string>
     <string name="section_tilt_control_subtitle">Ajusta el brillo inclinando tu dispositivo</string>
     <string name="enable_tilt_brightness">Activar Control de Brillo por Inclinación</string>
-    <string name="tilt_description">Inclina el teléfono: Vertical=30% brillo, Plano=100% brillo</string>
+    <string name="tilt_description">Inclina el teléfono: Vertical=30%% brillo, Plano=100%% brillo</string>
 
     <!-- Color Picker -->
     <string name="select_color">Seleccionar Color</string>
@@ -50,4 +50,54 @@
     <string name="blue">Azul</string>
     <string name="hex_format">Hex: %1$s</string>
     <string name="select_color_description">Seleccionar color de %1$s</string>
+
+    <!-- Palettes -->
+    <string name="palettes_title">Paletas</string>
+    <string name="manage_palettes">Paletas</string>
+    <string name="create_palette">Nueva Paleta</string>
+    <string name="create_palette_description">Guarda tus colores actuales como una nueva paleta.</string>
+    <string name="palette_name">Nombre de Paleta</string>
+    <string name="create">Crear</string>
+    <string name="rename_palette">Renombrar Paleta</string>
+    <string name="rename">Renombrar</string>
+    <string name="delete_palette">Eliminar Paleta</string>
+    <string name="delete">Eliminar</string>
+    <string name="delete_palette_confirmation">¿Estás seguro de que quieres eliminar \"%1$s\"? Esta acción no se puede deshacer.</string>
+    <string name="duplicate_palette">Duplicar Paleta</string>
+    <string name="built_in_palette">Preajuste incorporado</string>
+    <string name="active">Activa</string>
+
+    <!-- Settings additions -->
+    <string name="settings_done">Listo</string>
+    <string name="settings_section_brightness">Brillo</string>
+    <string name="settings_section_behavior">Comportamiento</string>
+    <string name="settings_quick_color_bar">Barra de Color Rápida</string>
+    <string name="settings_quick_color_bar_desc">Mostrar la barra flotante de selección de color</string>
+    <string name="settings_always_show_brightness">Siempre Mostrar Brillo</string>
+    <string name="settings_always_show_brightness_desc">Mostrar el indicador de brillo en la pantalla principal</string>
+    <string name="settings_section_visual_effects">Efectos Visuales</string>
+    <string name="settings_breathing_animation">Animación de Respiración</string>
+    <string name="settings_breathing_animation_desc">Efecto sutil de luz pulsante</string>
+    <string name="settings_breathing_depth">Profundidad de Respiración</string>
+    <string name="settings_breathing_cycle">Duración del Ciclo</string>
+    <string name="settings_ember_particles">Partículas de Brasa</string>
+    <string name="settings_ember_particles_desc">Partículas flotantes en colores cálidos</string>
+    <string name="settings_particle_shape">Forma de Partícula</string>
+    <string name="tap_to_skip">Toca para saltar la pantalla de inicio</string>
+    <string name="brightness_indicator">Indicador de brillo</string>
+    <string name="brightness_percent">%1$d%%</string>
+    <string name="palette_active_suffix">, activa</string>
+    <string name="toggle_on">Activado</string>
+    <string name="toggle_off">Desactivado</string>
+    <string name="color_selected_suffix">, seleccionado</string>
+    <string name="saturation_brightness_picker">Selector de saturación y brillo del color. Saturación %1$d por ciento, Brillo %2$d por ciento</string>
+    <string name="saturation_brightness_state">Saturación %1$d por ciento, Brillo %2$d por ciento</string>
+    <string name="hue_slider_description">Deslizador de tono de color, %1$d grados</string>
+    <string name="hue_slider_state">Tono %1$d grados</string>
+    <string name="color_channel_slider_description">Deslizador del canal de color %1$s, valor %2$d</string>
+    <string name="color_channel_slider_state">%1$s valor %2$d</string>
+    <string name="double_tap_brightness">Doble toque para alternar brillo máximo</string>
+    <string name="swipe_adjust_brightness">Desliza verticalmente para ajustar el brillo</string>
+    <string name="settings_always_show_brightness_indicator">Siempre Mostrar Brillo</string>
+    <string name="settings_always_show_brightness_indicator_desc">Mantener el indicador de brillo visible en la pantalla principal</string>
 </resources>

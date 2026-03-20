@@ -7,8 +7,4 @@
 <full-backup-content>
     <!-- Include DataStore preferences for backup -->
     <include domain="file" path="datastore/" />
-
-    <!-- Exclude cache and temporary files -->
-    <exclude domain="cache" path="." />
-    <exclude domain="no_backup" path="." />
 </full-backup-content>

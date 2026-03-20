@@ -1,26 +1,32 @@
 package com.rockyriverapps.tabletorch
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.rockyriverapps.tabletorch.data.AppSettings
+import com.rockyriverapps.tabletorch.data.ColorPalette
 import com.rockyriverapps.tabletorch.data.PreferencesManager
+import com.rockyriverapps.tabletorch.models.ParticleShape
 import com.rockyriverapps.tabletorch.sensors.TiltSensorManager
+import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+import java.util.UUID
 import kotlin.math.PI
 import kotlin.math.abs
 
 /**
  * ViewModel for the main TableTorch application.
- * Manages app settings, brightness control, and tilt sensor integration.
+ * Manages app settings, brightness control, tilt sensor integration, and palette operations.
  *
  * This ViewModel does NOT hold references to Window or Activity to prevent leaks.
  * It exposes brightness values that the Activity observes and applies to the Window.
@@ -42,37 +48,28 @@ class MainViewModel(
 
         /** Threshold for brightness change to prevent flicker (1% change) */
         private const val BRIGHTNESS_CHANGE_THRESHOLD = 0.01f
-
-        /** Default brightness value */
-        private const val DEFAULT_BRIGHTNESS = 0.85f
     }
 
     // ============================================================================
-    // Settings State (MUST be declared before init block)
+    // Settings State — exposes PreferencesManager's eagerly-started flow directly
     // ============================================================================
 
-    /**
-     * StateFlow of current app settings.
-     * Uses WhileSubscribed to stop collecting when no observers (e.g., app backgrounded).
-     */
     val settings: StateFlow<AppSettings> = preferencesManager.settingsFlow
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000),
-            initialValue = AppSettings.DEFAULT
-        )
 
     // ============================================================================
     // Brightness State (Activity observes and applies to Window)
     // ============================================================================
 
-    private val _currentBrightness = MutableStateFlow(DEFAULT_BRIGHTNESS)
+    private val _currentBrightness = MutableStateFlow(AppSettings.DEFAULT.defaultBrightness)
 
     /**
      * StateFlow of current brightness value (0.0 - 1.0).
      * Activity should observe this and apply to Window.
      */
     val currentBrightness: StateFlow<Float> = _currentBrightness.asStateFlow()
+
+    /** Mutex to serialize palette CRUD operations and prevent read-modify-write races */
+    private val paletteMutex = Mutex()
 
     init {
         // Observe settings changes to control sensor lifecycle
@@ -98,9 +95,9 @@ class MainViewModel(
             }
         }
 
-        // Apply initial brightness based on settings
+        // Apply initial brightness once real persisted settings arrive
         viewModelScope.launch {
-            val initialSettings = settings.value
+            val initialSettings = preferencesManager.settingsFlow.first()
             if (initialSettings.useDefaultBrightnessOnLaunch && !initialSettings.isAngleBasedBrightnessActive) {
                 _currentBrightness.value = initialSettings.defaultBrightness.coerceIn(MIN_BRIGHTNESS, 1f)
             }
@@ -125,7 +122,7 @@ class MainViewModel(
      * Matches iOS behavior: flat (0) = 100%, vertical (PI/2) = 30%
      * @param tiltAngleRadians Angle in radians (0 = flat, PI/2 = vertical)
      */
-    fun updateBrightnessForTilt(tiltAngleRadians: Double) {
+    private fun updateBrightnessForTilt(tiltAngleRadians: Double) {
         // Linear interpolation from 100% at flat to 30% at vertical
         val normalizedTilt = (tiltAngleRadians / (PI / 2)).coerceIn(0.0, 1.0)
         val brightness = (1.0 - TILT_BRIGHTNESS_RANGE * normalizedTilt).toFloat()
@@ -137,38 +134,9 @@ class MainViewModel(
         }
     }
 
-    /**
-     * Apply initial brightness based on settings.
-     * Called when Activity starts.
-     */
-    fun applyInitialBrightness() {
-        val currentSettings = settings.value
-        if (currentSettings.useDefaultBrightnessOnLaunch && !currentSettings.isAngleBasedBrightnessActive) {
-            _currentBrightness.value = currentSettings.defaultBrightness.coerceIn(MIN_BRIGHTNESS, 1f)
-        }
-    }
-
     // ============================================================================
     // Tilt Sensor Operations (encapsulated)
     // ============================================================================
-
-    /**
-     * Check if tilt sensor is available on this device.
-     */
-    fun isTiltSensorAvailable(): Boolean = tiltSensorManager.isAvailable()
-
-    /**
-     * Start or stop the tilt sensor based on whether angle-based brightness is active.
-     * Only starts the sensor if the feature is enabled in settings.
-     * @param forceStart If true, start regardless of settings (for resume scenarios)
-     */
-    fun updateTiltSensorState(forceStart: Boolean = false) {
-        if (forceStart && settings.value.isAngleBasedBrightnessActive) {
-            tiltSensorManager.startListening()
-        } else if (!settings.value.isAngleBasedBrightnessActive) {
-            tiltSensorManager.stopListening()
-        }
-    }
 
     /**
      * Start the tilt sensor if the feature is enabled.
@@ -224,13 +192,153 @@ class MainViewModel(
 
     fun updateColor(index: Int, colorValue: Long) {
         viewModelScope.launch {
-            preferencesManager.updateColor(index, colorValue)
+            paletteMutex.withLock {
+                preferencesManager.updateColor(index, colorValue)
+
+                // Sync change back to the active custom palette so it stays up to date
+                val snapshot = settings.value
+                val activePalette = snapshot.customPalettes.find {
+                    it.id == snapshot.activePaletteId
+                }
+                if (activePalette != null) {
+                    val updatedColors = snapshot.selectedColors.toMutableList()
+                    updatedColors[index] = colorValue
+                    val updatedPalette = activePalette.copy(
+                        colors = updatedColors.toImmutableList()
+                    )
+                    val updatedPalettes = snapshot.customPalettes.map {
+                        if (it.id == activePalette.id) updatedPalette else it
+                    }
+                    preferencesManager.saveCustomPalettes(updatedPalettes)
+                }
+            }
         }
     }
 
     fun restoreDefaultColors() {
         viewModelScope.launch {
-            preferencesManager.restoreDefaultColors()
+            paletteMutex.withLock {
+                preferencesManager.restoreDefaultColors()
+                preferencesManager.updateActivePaletteId(ColorPalette.PRESET_BRIGHT_ID)
+            }
+        }
+    }
+
+    fun updateShowQuickColorBar(enabled: Boolean) {
+        viewModelScope.launch {
+            preferencesManager.updateShowQuickColorBar(enabled)
+        }
+    }
+
+    fun updateAlwaysShowBrightness(enabled: Boolean) {
+        viewModelScope.launch {
+            preferencesManager.updateAlwaysShowBrightness(enabled)
+        }
+    }
+
+    // ============================================================================
+    // Visual Effects Operations
+    // ============================================================================
+
+    fun updateEnableBreathingAnimation(enabled: Boolean) {
+        viewModelScope.launch {
+            preferencesManager.updateEnableBreathingAnimation(enabled)
+        }
+    }
+
+    fun updateBreathingDepth(depth: Float) {
+        viewModelScope.launch {
+            preferencesManager.updateBreathingDepth(depth)
+        }
+    }
+
+    fun updateBreathingCycleDuration(duration: Float) {
+        viewModelScope.launch {
+            preferencesManager.updateBreathingCycleDuration(duration)
+        }
+    }
+
+    fun updateEnableEmberParticles(enabled: Boolean) {
+        viewModelScope.launch {
+            preferencesManager.updateEnableEmberParticles(enabled)
+        }
+    }
+
+    fun updateParticleShape(shape: ParticleShape) {
+        viewModelScope.launch {
+            preferencesManager.updateParticleShape(shape)
+        }
+    }
+
+    // ============================================================================
+    // Palette Operations (serialized with Mutex to prevent read-modify-write races)
+    // ============================================================================
+
+    fun switchPalette(paletteId: String) {
+        viewModelScope.launch {
+            paletteMutex.withLock {
+                val allPalettes = settings.value.getAllPalettes()
+                val palette = allPalettes.find { it.id == paletteId } ?: return@withLock
+                preferencesManager.switchPalette(paletteId, palette.colors)
+            }
+        }
+    }
+
+    fun createCustomPalette(name: String, colors: List<Long>) {
+        viewModelScope.launch {
+            paletteMutex.withLock {
+                val newPalette = ColorPalette(
+                    id = UUID.randomUUID().toString(),
+                    name = name,
+                    colors = colors.take(ColorPalette.PALETTE_SIZE).toImmutableList(),
+                    isBuiltIn = false
+                )
+                val updatedPalettes = settings.value.customPalettes + newPalette
+                preferencesManager.saveCustomPalettes(updatedPalettes)
+                preferencesManager.switchPalette(newPalette.id, newPalette.colors)
+            }
+        }
+    }
+
+    fun duplicatePalette(palette: ColorPalette) {
+        viewModelScope.launch {
+            paletteMutex.withLock {
+                val duplicated = ColorPalette(
+                    id = UUID.randomUUID().toString(),
+                    name = "${palette.name} Copy",
+                    colors = palette.colors,
+                    isBuiltIn = false
+                )
+                val updatedPalettes = settings.value.customPalettes + duplicated
+                preferencesManager.saveCustomPalettes(updatedPalettes)
+                preferencesManager.switchPalette(duplicated.id, duplicated.colors)
+            }
+        }
+    }
+
+    fun renamePalette(paletteId: String, newName: String) {
+        viewModelScope.launch {
+            paletteMutex.withLock {
+                val updatedPalettes = settings.value.customPalettes.map { palette ->
+                    if (palette.id == paletteId) palette.copy(name = newName) else palette
+                }
+                preferencesManager.saveCustomPalettes(updatedPalettes)
+            }
+        }
+    }
+
+    fun deletePalette(paletteId: String) {
+        viewModelScope.launch {
+            paletteMutex.withLock {
+                val snapshot = settings.value
+                val updatedPalettes = snapshot.customPalettes.filter { it.id != paletteId }
+                preferencesManager.saveCustomPalettes(updatedPalettes)
+
+                // If we deleted the active palette, switch to Bright
+                if (snapshot.activePaletteId == paletteId) {
+                    preferencesManager.switchPalette(ColorPalette.Bright.id, ColorPalette.Bright.colors)
+                }
+            }
         }
     }
 
@@ -240,7 +348,6 @@ class MainViewModel(
 
     override fun onCleared() {
         super.onCleared()
-        // Note: PreferencesManager is a singleton, so we don't close it here
         tiltSensorManager.stopListening()
     }
 
@@ -249,11 +356,14 @@ class MainViewModel(
      */
     class Factory(
         private val preferencesManager: PreferencesManager,
-        private val tiltSensorManager: TiltSensorManager
+        private val appContext: Context
     ) : ViewModelProvider.Factory {
         @Suppress("UNCHECKED_CAST")
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
             if (modelClass.isAssignableFrom(MainViewModel::class.java)) {
+                // TiltSensorManager is created here so it is only instantiated once,
+                // when the ViewModel is first created — not on every Activity recreation.
+                val tiltSensorManager = TiltSensorManager(appContext)
                 return MainViewModel(preferencesManager, tiltSensorManager) as T
             }
             throw IllegalArgumentException("Unknown ViewModel class: ${modelClass.name}")
