@@ -48,6 +48,9 @@ class MainViewModel(
 
         /** Threshold for brightness change to prevent flicker (1% change) */
         private const val BRIGHTNESS_CHANGE_THRESHOLD = 0.01f
+
+        /** Maximum number of custom palettes allowed */
+        const val MAX_CUSTOM_PALETTES = 50
     }
 
     // ============================================================================
@@ -287,6 +290,9 @@ class MainViewModel(
     fun createCustomPalette(name: String, colors: List<Long>) {
         viewModelScope.launch {
             paletteMutex.withLock {
+                if (settings.value.customPalettes.size >= MAX_CUSTOM_PALETTES) {
+                    return@withLock
+                }
                 val newPalette = ColorPalette(
                     id = UUID.randomUUID().toString(),
                     name = name,
@@ -303,6 +309,9 @@ class MainViewModel(
     fun duplicatePalette(palette: ColorPalette) {
         viewModelScope.launch {
             paletteMutex.withLock {
+                if (settings.value.customPalettes.size >= MAX_CUSTOM_PALETTES) {
+                    return@withLock
+                }
                 val duplicated = ColorPalette(
                     id = UUID.randomUUID().toString(),
                     name = "${palette.name} Copy",

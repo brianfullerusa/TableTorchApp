@@ -2,7 +2,7 @@
 <resources>
     <style name="Theme.TableTorch" parent="android:Theme.Material.NoActionBar">
         <!-- Dark window background eliminates white flash on launch for this torch app -->
-        <item name="android:windowBackground">@android:color/black</item>
+        <item name="android:windowBackground">@color/dark_blue</item>
         <!-- Edge-to-edge is handled by enableEdgeToEdge() in MainActivity -->
         <!-- Transparent system bars for proper edge-to-edge content -->
         <item name="android:statusBarColor">@android:color/transparent</item>

@@ -1,6 +1,7 @@
 package com.rockyriverapps.tabletorch.ui.components
 
 import androidx.compose.runtime.key
+import com.rockyriverapps.tabletorch.data.displayName
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -27,7 +28,9 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.rockyriverapps.tabletorch.R
 import com.rockyriverapps.tabletorch.data.ColorPalette
 import com.rockyriverapps.tabletorch.ui.theme.toComposeColor
 import com.rockyriverapps.tabletorch.ui.theme.TableTorchDimens
@@ -84,11 +87,17 @@ private fun PaletteChip(
     modifier: Modifier = Modifier
 ) {
     val chipShape = RoundedCornerShape(20.dp)
-    val selectedStateText = if (isSelected) "selected" else "not selected"
+    val selectedStateText = if (isSelected) {
+        stringResource(R.string.a11y_state_selected)
+    } else {
+        stringResource(R.string.a11y_state_not_selected)
+    }
+    val localizedName = palette.displayName()
+    val chipDescription = stringResource(R.string.a11y_palette_chip, localizedName)
 
     Row(
         modifier = modifier
-            .height(36.dp)
+            .height(48.dp)
             .clip(chipShape)
             .then(
                 if (isSelected) {
@@ -112,7 +121,7 @@ private fun PaletteChip(
             .clickable(role = Role.Button) { onClick() }
             .padding(horizontal = 12.dp)
             .semantics(mergeDescendants = true) {
-                contentDescription = "${palette.name} palette"
+                contentDescription = chipDescription
                 stateDescription = selectedStateText
             },
         verticalAlignment = Alignment.CenterVertically,
@@ -120,7 +129,7 @@ private fun PaletteChip(
     ) {
         // Palette name
         Text(
-            text = palette.name,
+            text = localizedName,
             style = MaterialTheme.typography.labelMedium,
             color = if (isSelected) {
                 MaterialTheme.colorScheme.primary

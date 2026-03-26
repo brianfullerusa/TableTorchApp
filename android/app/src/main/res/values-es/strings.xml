@@ -87,6 +87,16 @@
     <string name="brightness_indicator">Indicador de brillo</string>
     <string name="brightness_percent">%1$d%%</string>
     <string name="palette_active_suffix">, activa</string>
+    <string name="a11y_torch_swatch_active">%1$s, seleccionado, mantener presionado para editar color</string>
+    <string name="a11y_torch_swatch">%1$s, toca para seleccionar, mantener presionado para editar color</string>
+    <string name="a11y_palette_chip">Paleta %1$s</string>
+    <string name="a11y_state_selected">seleccionado</string>
+    <string name="a11y_state_not_selected">no seleccionado</string>
+    <string name="a11y_palette_item">Paleta %1$s</string>
+    <string name="a11y_palette_item_active">Paleta %1$s, activa</string>
+    <string name="a11y_brightness_slider">Deslizador de brillo predeterminado, %1$d por ciento</string>
+    <string name="a11y_brightness_state">%1$d por ciento</string>
+    <string name="a11y_torch_screen">Pantalla de antorcha, brillo %1$d por ciento. Doble toque para brillo máximo, desliza verticalmente para ajustar.</string>
     <string name="toggle_on">Activado</string>
     <string name="toggle_off">Desactivado</string>
     <string name="color_selected_suffix">, seleccionado</string>
@@ -100,4 +110,91 @@
     <string name="swipe_adjust_brightness">Desliza verticalmente para ajustar el brillo</string>
     <string name="settings_always_show_brightness_indicator">Siempre Mostrar Brillo</string>
     <string name="settings_always_show_brightness_indicator_desc">Mantener el indicador de brillo visible en la pantalla principal</string>
+
+    <!-- Accessibility action for color swatch editing -->
+    <string name="a11y_action_edit_color">Editar color</string>
+
+    <!-- Accessibility actions for brightness control -->
+    <string name="a11y_action_increase_brightness">Aumentar brillo</string>
+    <string name="a11y_action_decrease_brightness">Disminuir brillo</string>
+    <string name="a11y_action_toggle_max_brightness">Alternar brillo máximo</string>
+
+    <!-- Accessibility actions for color picker -->
+    <string name="a11y_action_increase_saturation">Aumentar saturación</string>
+    <string name="a11y_action_decrease_saturation">Disminuir saturación</string>
+    <string name="a11y_action_increase_color_brightness">Aumentar brillo del color</string>
+    <string name="a11y_action_decrease_color_brightness">Disminuir brillo del color</string>
+
+    <!-- Localized palette names -->
+    <string name="palette_low_light">Luz Baja</string>
+    <string name="palette_bright">Brillante</string>
+    <string name="palette_party">Fiesta</string>
+
+    <!-- Color Grid Preset Names -->
+    <string-array name="color_grid_names">
+        <item>Blanco</item>
+        <item>Gris claro</item>
+        <item>Plateado</item>
+        <item>Gris medio</item>
+        <item>Gris</item>
+        <item>Gris oscuro</item>
+        <item>Carbón</item>
+        <item>Negro</item>
+        <item>Crema</item>
+        <item>Amarillo claro</item>
+        <item>Amarillo suave</item>
+        <item>Amarillo</item>
+        <item>Amarillo dorado</item>
+        <item>Ámbar</item>
+        <item>Ámbar oscuro</item>
+        <item>Ámbar anaranjado</item>
+        <item>Durazno</item>
+        <item>Naranja claro</item>
+        <item>Naranja</item>
+        <item>Naranja intenso</item>
+        <item>Coral</item>
+        <item>Rojo anaranjado</item>
+        <item>Rojo</item>
+        <item>Rojo oscuro</item>
+        <item>Rosa claro</item>
+        <item>Rosa</item>
+        <item>Rosa intenso</item>
+        <item>Magenta</item>
+        <item>Púrpura claro</item>
+        <item>Púrpura</item>
+        <item>Púrpura intenso</item>
+        <item>Púrpura oscuro</item>
+        <item>Azul pálido</item>
+        <item>Azul claro</item>
+        <item>Azul cielo</item>
+        <item>Azul</item>
+        <item>Azul medio</item>
+        <item>Azul real</item>
+        <item>Azul oscuro</item>
+        <item>Azul marino</item>
+        <item>Verde azulado pálido</item>
+        <item>Verde azulado claro</item>
+        <item>Verde azulado</item>
+        <item>Verde azulado oscuro</item>
+        <item>Verde pálido</item>
+        <item>Verde claro</item>
+        <item>Verde</item>
+        <item>Verde medio</item>
+        <item>Lima pálido</item>
+        <item>Lima claro</item>
+        <item>Lima</item>
+        <item>Verde amarillento</item>
+        <item>Verde amarillento pálido</item>
+        <item>Verde amarillento claro</item>
+        <item>Chartreuse</item>
+        <item>Verde oliva</item>
+        <item>Marrón pálido</item>
+        <item>Canela</item>
+        <item>Marrón claro</item>
+        <item>Marrón</item>
+        <item>Marrón medio</item>
+        <item>Marrón oscuro</item>
+        <item>Marrón intenso</item>
+        <item>Espresso</item>
+    </string-array>
 </resources>

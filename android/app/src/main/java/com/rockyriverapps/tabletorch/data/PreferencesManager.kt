@@ -19,8 +19,10 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import androidx.datastore.preferences.core.emptyPreferences
 import java.io.IOException
 
 // Extension property for DataStore - singleton by design
@@ -91,7 +93,16 @@ class PreferencesManager private constructor(context: Context) {
      * StateFlow of current app settings, emits whenever any setting changes.
      * Uses SharingStarted.Eagerly since preferences are needed immediately on app start.
      */
-    val settingsFlow: StateFlow<AppSettings> = appContext.dataStore.data.map { preferences ->
+    val settingsFlow: StateFlow<AppSettings> = appContext.dataStore.data
+        .catch { exception ->
+            if (exception is IOException) {
+                Log.e(TAG, "Error reading preferences", exception)
+                emit(emptyPreferences())
+            } else {
+                throw exception
+            }
+        }
+        .map { preferences ->
         val colors = (0 until ColorPalette.PALETTE_SIZE).map { index ->
             preferences[PreferencesKeys.colorKey(index)]
                 ?: TorchColors.defaultColorsImmutable[index]

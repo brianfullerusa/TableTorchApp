@@ -132,7 +132,7 @@ fun FloatingColorBar(
 
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(6.dp)
+            horizontalArrangement = Arrangement.spacedBy(2.dp)
         ) {
             colors.forEachIndexed { index, colorValue ->
                 val color = colorValue.toComposeColor()
@@ -159,7 +159,7 @@ fun FloatingColorBar(
 
                 Box(
                     modifier = Modifier
-                        .size(38.dp)
+                        .size(48.dp)
                         .offset(y = flickerOffset)
                         .scale(scale)
                         .clickable(
@@ -188,7 +188,7 @@ fun FloatingColorBar(
             // Settings gear icon
             IconButton(
                 onClick = onSettingsClick,
-                modifier = Modifier.size(36.dp)
+                modifier = Modifier.size(48.dp)
             ) {
                 Icon(
                     imageVector = Icons.Default.Settings,

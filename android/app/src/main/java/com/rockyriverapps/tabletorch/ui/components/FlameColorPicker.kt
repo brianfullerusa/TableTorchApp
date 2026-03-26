@@ -54,8 +54,12 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.res.stringArrayResource
+import androidx.compose.ui.semantics.CustomAccessibilityAction
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.customActions
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.setProgress
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -102,24 +106,7 @@ private object ColorGridPresets {
         Color(0xFF795548), Color(0xFF6D4C41), Color(0xFF5D4037), Color(0xFF4E342E)
     )
 
-    val colorNames: ImmutableList<String> = persistentListOf(
-        "White", "Light gray", "Silver", "Medium gray",
-        "Gray", "Dark gray", "Charcoal", "Black",
-        "Cream", "Light yellow", "Soft yellow", "Yellow",
-        "Golden yellow", "Amber", "Dark amber", "Orange amber",
-        "Peach", "Light orange", "Orange", "Deep orange",
-        "Coral", "Red orange", "Red", "Dark red",
-        "Light pink", "Pink", "Hot pink", "Magenta",
-        "Light purple", "Purple", "Deep purple", "Dark purple",
-        "Pale blue", "Light blue", "Sky blue", "Blue",
-        "Medium blue", "Royal blue", "Dark blue", "Navy blue",
-        "Pale teal", "Light teal", "Teal", "Dark teal",
-        "Pale green", "Light green", "Green", "Medium green",
-        "Pale lime", "Light lime", "Lime", "Yellow green",
-        "Pale yellow green", "Light yellow green", "Chartreuse", "Olive green",
-        "Pale brown", "Tan", "Light brown", "Brown",
-        "Medium brown", "Dark brown", "Deep brown", "Espresso"
-    )
+    // Color names moved to string-array resource (R.array.color_grid_names) for localization
 }
 
 /**
@@ -376,6 +363,8 @@ private fun ColorGridPicker(
     selectedColor: Color,
     onColorSelect: (Color) -> Unit
 ) {
+    val colorNames = stringArrayResource(R.array.color_grid_names)
+
     LazyVerticalGrid(
         columns = GridCells.Fixed(6),
         modifier = Modifier.fillMaxSize(),
@@ -387,7 +376,7 @@ private fun ColorGridPicker(
             // Calculate luminance to determine checkmark color (white on dark, black on light)
             val luminance = 0.299f * color.red + 0.587f * color.green + 0.114f * color.blue
             val checkmarkColor = if (luminance > 0.5f) Color.Black else Color.White
-            val colorName = ColorGridPresets.colorNames.getOrElse(index) { "Color ${index + 1}" }
+            val colorName = colorNames.getOrElse(index) { "Color ${index + 1}" }
             val selectedSuffix = if (isSelected) stringResource(R.string.color_selected_suffix) else ""
 
             Box(
@@ -478,6 +467,10 @@ private fun SaturationValuePanel(
     val valPercent = (value * 100).toInt()
     val satBrightDesc = stringResource(R.string.saturation_brightness_picker, satPercent, valPercent)
     val satBrightState = stringResource(R.string.saturation_brightness_state, satPercent, valPercent)
+    val increaseSatLabel = stringResource(R.string.a11y_action_increase_saturation)
+    val decreaseSatLabel = stringResource(R.string.a11y_action_decrease_saturation)
+    val increaseBrightLabel = stringResource(R.string.a11y_action_increase_color_brightness)
+    val decreaseBrightLabel = stringResource(R.string.a11y_action_decrease_color_brightness)
 
     Box(
         modifier = Modifier
@@ -485,6 +478,20 @@ private fun SaturationValuePanel(
             .semantics {
                 contentDescription = satBrightDesc
                 stateDescription = satBrightState
+                customActions = listOf(
+                    CustomAccessibilityAction(increaseSatLabel) {
+                        onSaturationValueChange((saturation + 0.1f).coerceIn(0f, 1f), value); true
+                    },
+                    CustomAccessibilityAction(decreaseSatLabel) {
+                        onSaturationValueChange((saturation - 0.1f).coerceIn(0f, 1f), value); true
+                    },
+                    CustomAccessibilityAction(increaseBrightLabel) {
+                        onSaturationValueChange(saturation, (value + 0.1f).coerceIn(0f, 1f)); true
+                    },
+                    CustomAccessibilityAction(decreaseBrightLabel) {
+                        onSaturationValueChange(saturation, (value - 0.1f).coerceIn(0f, 1f)); true
+                    }
+                )
             }
             .pointerInput(Unit) {
                 detectTapGestures { offset ->
@@ -555,6 +562,11 @@ private fun HueSlider(
             .semantics {
                 contentDescription = hueDesc
                 stateDescription = hueState
+                setProgress(label = null) { targetValue ->
+                    val newHue = (targetValue.coerceIn(0f, 1f) * 360f) % 360f
+                    onHueChange(newHue)
+                    true
+                }
             }
             .pointerInput(Unit) {
                 detectTapGestures { offset ->
@@ -750,7 +762,7 @@ private fun ColorChannelSlider(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(24.dp)
+                .height(48.dp)
                 .clip(RoundedCornerShape(12.dp))
                 .background(
                     brush = Brush.horizontalGradient(gradientColors)
@@ -758,6 +770,10 @@ private fun ColorChannelSlider(
                 .semantics {
                     contentDescription = channelDesc
                     stateDescription = channelState
+                    setProgress(label = null) { targetValue ->
+                        onValueChange(targetValue.coerceIn(0f, 1f))
+                        true
+                    }
                 }
                 .pointerInput(Unit) {
                     detectTapGestures { offset ->

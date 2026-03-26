@@ -124,7 +124,7 @@
 # DataStore Preferences
 # ============================================================================
 
--keep class * extends androidx.datastore.preferences.protobuf.GeneratedMessageLite { *; }
+# No protobuf keep rules needed -- this app uses DataStore Preferences (not Proto)
 
 # ============================================================================
 # App-Specific Classes

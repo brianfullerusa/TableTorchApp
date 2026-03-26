@@ -3,9 +3,12 @@ package com.rockyriverapps.tabletorch.ui.components
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.shrinkVertically
+import android.view.HapticFeedbackConstants
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -43,6 +46,10 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.semantics.CustomAccessibilityAction
+import androidx.compose.ui.semantics.customActions
+import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -95,6 +102,7 @@ fun SettingsSheetContent(
     onPreventScreenLockChange: (Boolean) -> Unit,
     onAngleBasedBrightnessChange: (Boolean) -> Unit,
     onColorChange: (Int, Long) -> Unit,
+    onColorSelect: (Int) -> Unit = {},
     onRestoreDefaultColors: () -> Unit,
     onPaletteSelect: (String) -> Unit = {},
     onNavigateToPalettes: () -> Unit = {},
@@ -125,6 +133,7 @@ fun SettingsSheetContent(
         TorchColorsSection(
             settings = settings,
             onColorChange = onColorChange,
+            onColorSelect = onColorSelect,
             onRestoreDefaultColors = onRestoreDefaultColors,
             onPaletteSelect = onPaletteSelect,
             onNavigateToPalettes = onNavigateToPalettes
@@ -227,7 +236,8 @@ private fun SectionHeader(title: String) {
         style = MaterialTheme.typography.labelLarge,
         fontWeight = FontWeight.SemiBold,
         color = SectionHeaderColor,
-        letterSpacing = MaterialTheme.typography.labelLarge.letterSpacing
+        letterSpacing = MaterialTheme.typography.labelLarge.letterSpacing,
+        modifier = Modifier.semantics { heading() }
     )
 }
 
@@ -256,6 +266,7 @@ private fun SectionDivider() {
 private fun TorchColorsSection(
     settings: AppSettings,
     onColorChange: (Int, Long) -> Unit,
+    onColorSelect: (Int) -> Unit,
     onRestoreDefaultColors: () -> Unit,
     onPaletteSelect: (String) -> Unit,
     onNavigateToPalettes: () -> Unit
@@ -280,6 +291,7 @@ private fun TorchColorsSection(
                                     index = index,
                                     colorValue = colors[index],
                                     isActive = index == settings.lastSelectedColorIndex,
+                                    onSelect = { onColorSelect(index) },
                                     onColorChange = { newColor -> onColorChange(index, newColor) }
                                 )
                             }
@@ -294,7 +306,7 @@ private fun TorchColorsSection(
 
     // Palette chip row for quick switching between palettes
     PaletteChipRow(
-        palettes = settings.getAllPalettes(),
+        palettes = remember(settings.customPalettes) { settings.getAllPalettes() },
         activePaletteId = settings.activePaletteId,
         onPaletteSelect = onPaletteSelect,
         modifier = Modifier.fillMaxWidth()
@@ -343,15 +355,24 @@ private fun TorchColorsSection(
  * Individual color swatch card showing the torch color with a label.
  * Active color has a small indicator dot overlay.
  */
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun ColorSwatchCard(
     index: Int,
     colorValue: Long,
     isActive: Boolean,
+    onSelect: () -> Unit,
     onColorChange: (Long) -> Unit
 ) {
     val color = colorValue.toComposeColor()
+    val view = LocalView.current
     val torchLabel = stringResource(R.string.torch_label, index + 1)
+    val swatchDescription = if (isActive) {
+        stringResource(R.string.a11y_torch_swatch_active, torchLabel)
+    } else {
+        stringResource(R.string.a11y_torch_swatch, torchLabel)
+    }
+    val editColorLabel = stringResource(R.string.a11y_action_edit_color)
 
     // Track whether the color picker dialog is showing
     var showDialog by remember { mutableStateOf(false) }
@@ -369,26 +390,45 @@ private fun ColorSwatchCard(
                     Modifier.border(1.dp, Color.White.copy(alpha = 0.15f), RoundedCornerShape(12.dp))
                 }
             )
-            .clickable { showDialog = true }
-            .semantics {
-                contentDescription = if (isActive) {
-                    "$torchLabel, active, tap to edit"
-                } else {
-                    "$torchLabel, tap to edit"
+            .combinedClickable(
+                onClick = {
+                    view.performHapticFeedback(HapticFeedbackConstants.CONTEXT_CLICK)
+                    onSelect()
+                },
+                onLongClick = {
+                    view.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
+                    showDialog = true
                 }
+            )
+            .semantics {
+                contentDescription = swatchDescription
+                customActions = listOf(
+                    CustomAccessibilityAction(editColorLabel) {
+                        showDialog = true
+                        true
+                    }
+                )
             },
         contentAlignment = Alignment.BottomCenter
     ) {
-        // Active indicator dot in top-right corner
+        // Active checkmark indicator in top-right corner
         if (isActive) {
             Box(
                 modifier = Modifier
                     .align(Alignment.TopEnd)
                     .padding(6.dp)
-                    .size(8.dp)
+                    .size(18.dp)
                     .clip(CircleShape)
-                    .background(Color.White)
-            )
+                    .background(Color.White),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "\u2713",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = Color.Black,
+                    fontWeight = FontWeight.Bold
+                )
+            }
         }
 
         // Label at the bottom of the swatch
@@ -401,7 +441,7 @@ private fun ColorSwatchCard(
         )
     }
 
-    // Color picker dialog
+    // Color picker dialog (opened via long press)
     if (showDialog) {
         FullColorPickerDialog(
             initialColor = color,
@@ -457,6 +497,8 @@ private fun BrightnessSection(
         }
 
         val brightnessPercent = (defaultBrightness * 100).toInt()
+        val brightnessSliderDesc = stringResource(R.string.a11y_brightness_slider, brightnessPercent)
+        val brightnessStateDesc = stringResource(R.string.a11y_brightness_state, brightnessPercent)
         Slider(
             value = defaultBrightness,
             onValueChange = onDefaultBrightnessChange,
@@ -464,8 +506,8 @@ private fun BrightnessSection(
             modifier = Modifier
                 .fillMaxWidth()
                 .semantics {
-                    contentDescription = "Default brightness slider, $brightnessPercent percent"
-                    stateDescription = "$brightnessPercent percent"
+                    contentDescription = brightnessSliderDesc
+                    stateDescription = brightnessStateDesc
                 },
             colors = TorchSliderDefaults.colors()
         )
@@ -614,68 +656,69 @@ private fun VisualEffectsSection(
         }
     }
 
-    Spacer(modifier = Modifier.height(4.dp))
-
-    // Ember particles toggle
-    SheetToggleRow(
-        title = stringResource(R.string.settings_ember_particles),
-        subtitle = stringResource(R.string.settings_ember_particles_desc),
-        checked = settings.enableEmberParticles,
-        onCheckedChange = onEnableEmberParticlesChange
-    )
-
-    // Expandable shape picker when particles are enabled
-    AnimatedVisibility(
-        visible = settings.enableEmberParticles,
-        enter = expandVertically(),
-        exit = shrinkVertically()
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(start = 8.dp, top = 8.dp)
-        ) {
-            Text(
-                text = stringResource(R.string.settings_particle_shape),
-                style = MaterialTheme.typography.bodySmall,
-                color = SubtitleTextColor
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceEvenly
-            ) {
-                ParticleShape.entries.forEach { shape ->
-                    val isSelected = settings.particleShape == shape
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(8.dp))
-                            .clickable { onParticleShapeChange(shape) }
-                            .then(
-                                if (isSelected) {
-                                    Modifier.background(ToggleActiveColor.copy(alpha = 0.2f))
-                                } else {
-                                    Modifier
-                                }
-                            )
-                            .padding(horizontal = 8.dp, vertical = 6.dp)
-                    ) {
-                        Text(
-                            text = shape.symbol,
-                            style = MaterialTheme.typography.titleLarge,
-                            color = if (isSelected) ToggleActiveColor else Color.White.copy(alpha = 0.7f)
-                        )
-                        Text(
-                            text = shape.label,
-                            style = MaterialTheme.typography.labelSmall,
-                            color = if (isSelected) ToggleActiveColor else SubtitleTextColor
-                        )
-                    }
-                }
-            }
-        }
-    }
+    // TODO: Ember particles option hidden for this version
+//    Spacer(modifier = Modifier.height(4.dp))
+//
+//    // Ember particles toggle
+//    SheetToggleRow(
+//        title = stringResource(R.string.settings_ember_particles),
+//        subtitle = stringResource(R.string.settings_ember_particles_desc),
+//        checked = settings.enableEmberParticles,
+//        onCheckedChange = onEnableEmberParticlesChange
+//    )
+//
+//    // Expandable shape picker when particles are enabled
+//    AnimatedVisibility(
+//        visible = settings.enableEmberParticles,
+//        enter = expandVertically(),
+//        exit = shrinkVertically()
+//    ) {
+//        Column(
+//            modifier = Modifier
+//                .fillMaxWidth()
+//                .padding(start = 8.dp, top = 8.dp)
+//        ) {
+//            Text(
+//                text = stringResource(R.string.settings_particle_shape),
+//                style = MaterialTheme.typography.bodySmall,
+//                color = SubtitleTextColor
+//            )
+//            Spacer(modifier = Modifier.height(8.dp))
+//            Row(
+//                modifier = Modifier.fillMaxWidth(),
+//                horizontalArrangement = Arrangement.SpaceEvenly
+//            ) {
+//                ParticleShape.entries.forEach { shape ->
+//                    val isSelected = settings.particleShape == shape
+//                    Column(
+//                        horizontalAlignment = Alignment.CenterHorizontally,
+//                        modifier = Modifier
+//                            .clip(RoundedCornerShape(8.dp))
+//                            .clickable { onParticleShapeChange(shape) }
+//                            .then(
+//                                if (isSelected) {
+//                                    Modifier.background(ToggleActiveColor.copy(alpha = 0.2f))
+//                                } else {
+//                                    Modifier
+//                                }
+//                            )
+//                            .padding(horizontal = 8.dp, vertical = 6.dp)
+//                    ) {
+//                        Text(
+//                            text = shape.symbol,
+//                            style = MaterialTheme.typography.titleLarge,
+//                            color = if (isSelected) ToggleActiveColor else Color.White.copy(alpha = 0.7f)
+//                        )
+//                        Text(
+//                            text = shape.label,
+//                            style = MaterialTheme.typography.labelSmall,
+//                            color = if (isSelected) ToggleActiveColor else SubtitleTextColor
+//                        )
+//                    }
+//                }
+//            }
+//        }
+//    }
 }
 
 // ============================================================================

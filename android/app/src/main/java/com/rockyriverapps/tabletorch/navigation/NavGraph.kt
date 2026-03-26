@@ -88,7 +88,7 @@ fun TableTorchNavGraph(
 
         composable(Routes.PALETTES) {
             PaletteListScreen(
-                palettes = settings.getAllPalettes(),
+                palettes = remember(settings.customPalettes) { settings.getAllPalettes() },
                 activePaletteId = settings.activePaletteId,
                 currentColors = settings.selectedColors,
                 onNavigateBack = {

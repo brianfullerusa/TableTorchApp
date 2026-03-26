@@ -1,5 +1,6 @@
 import java.io.FileInputStream
 import java.util.Properties
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
     alias(libs.plugins.android.application)
@@ -8,7 +9,7 @@ plugins {
 }
 
 // Load keystore properties if available
-val keystorePropertiesFile = rootProject.file("keystore.properties")
+val keystorePropertiesFile: File = rootProject.file("keystore.properties")
 val keystoreProperties = Properties()
 if (keystorePropertiesFile.exists()) {
     keystoreProperties.load(FileInputStream(keystorePropertiesFile))
@@ -30,10 +31,12 @@ android {
         versionCode = 1
         versionName = "1.0"
 
-        // Only keep English and Spanish resources; strip all other library translations
-        resourceConfigurations += listOf("en", "es")
-
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+    }
+
+    // Locale filtering (replaces deprecated resourceConfigurations)
+    androidResources {
+        localeFilters += listOf("en", "es")
     }
 
     signingConfigs {
@@ -45,10 +48,14 @@ android {
         // Release signing config - requires keystore.properties file
         create("release") {
             if (keystorePropertiesFile.exists()) {
-                keyAlias = keystoreProperties["keyAlias"] as? String ?: ""
-                keyPassword = keystoreProperties["keyPassword"] as? String ?: ""
-                storeFile = keystoreProperties["storeFile"]?.let { file(it as String) }
-                storePassword = keystoreProperties["storePassword"] as? String ?: ""
+                keyAlias = keystoreProperties.getProperty("keyAlias")
+                    ?: error("keyAlias missing in keystore.properties")
+                keyPassword = keystoreProperties.getProperty("keyPassword")
+                    ?: error("keyPassword missing in keystore.properties")
+                storeFile = keystoreProperties.getProperty("storeFile")?.let { file(it) }
+                    ?: error("storeFile missing in keystore.properties")
+                storePassword = keystoreProperties.getProperty("storePassword")
+                    ?: error("storePassword missing in keystore.properties")
             }
         }
     }
@@ -69,14 +76,14 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
-            // Use release signing config - fail build if keystore is not configured
-            // This prevents accidentally signing release builds with debug keys
+            ndk {
+                debugSymbolLevel = "FULL"
+            }
+            // Only sign release builds when keystore is configured
             signingConfig = if (keystorePropertiesFile.exists()) {
                 signingConfigs.getByName("release")
             } else {
-                // For CI/local development, allow debug builds to proceed
-                // Release builds without proper signing will fail at signing step
-                null
+                null // Release builds without keystore will fail at signing step
             }
         }
     }
@@ -86,15 +93,19 @@ android {
         targetCompatibility = JavaVersion.VERSION_11
     }
 
-    kotlinOptions {
-        jvmTarget = "11"
-    }
-
     buildFeatures {
         compose = true
         buildConfig = true
     }
+
     buildToolsVersion = "36.1.0"
+}
+
+// Kotlin compiler options (replaces deprecated kotlinOptions block)
+kotlin {
+    compilerOptions {
+        jvmTarget.set(JvmTarget.JVM_11)
+    }
 }
 
 dependencies {

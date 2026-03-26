@@ -97,6 +97,16 @@
     <string name="palette_active_suffix">, active</string>
 
     <!-- Accessibility -->
+    <string name="a11y_torch_swatch_active">%1$s, selected, long press to edit color</string>
+    <string name="a11y_torch_swatch">%1$s, tap to select, long press to edit color</string>
+    <string name="a11y_palette_chip">%1$s palette</string>
+    <string name="a11y_state_selected">selected</string>
+    <string name="a11y_state_not_selected">not selected</string>
+    <string name="a11y_palette_item">%1$s palette</string>
+    <string name="a11y_palette_item_active">%1$s palette, active</string>
+    <string name="a11y_brightness_slider">Default brightness slider, %1$d percent</string>
+    <string name="a11y_brightness_state">%1$d percent</string>
+    <string name="a11y_torch_screen">Torch screen, brightness %1$d percent. Double tap for max brightness, swipe vertically to adjust.</string>
     <string name="toggle_on">On</string>
     <string name="toggle_off">Off</string>
     <string name="color_selected_suffix">, selected</string>
@@ -106,4 +116,91 @@
     <string name="hue_slider_state">Hue %1$d degrees</string>
     <string name="color_channel_slider_description">%1$s color channel slider, value %2$d</string>
     <string name="color_channel_slider_state">%1$s value %2$d</string>
+
+    <!-- Accessibility actions for brightness control -->
+    <string name="a11y_action_increase_brightness">Increase brightness</string>
+    <string name="a11y_action_decrease_brightness">Decrease brightness</string>
+    <string name="a11y_action_toggle_max_brightness">Toggle max brightness</string>
+
+    <!-- Accessibility action for color swatch editing -->
+    <string name="a11y_action_edit_color">Edit color</string>
+
+    <!-- Accessibility actions for color picker -->
+    <string name="a11y_action_increase_saturation">Increase saturation</string>
+    <string name="a11y_action_decrease_saturation">Decrease saturation</string>
+    <string name="a11y_action_increase_color_brightness">Increase color brightness</string>
+    <string name="a11y_action_decrease_color_brightness">Decrease color brightness</string>
+
+    <!-- Localized palette names -->
+    <string name="palette_low_light">Low Light</string>
+    <string name="palette_bright">Bright</string>
+    <string name="palette_party">Party</string>
+
+    <!-- Color Grid Preset Names (64 colors for accessibility descriptions) -->
+    <string-array name="color_grid_names">
+        <item>White</item>
+        <item>Light gray</item>
+        <item>Silver</item>
+        <item>Medium gray</item>
+        <item>Gray</item>
+        <item>Dark gray</item>
+        <item>Charcoal</item>
+        <item>Black</item>
+        <item>Cream</item>
+        <item>Light yellow</item>
+        <item>Soft yellow</item>
+        <item>Yellow</item>
+        <item>Golden yellow</item>
+        <item>Amber</item>
+        <item>Dark amber</item>
+        <item>Orange amber</item>
+        <item>Peach</item>
+        <item>Light orange</item>
+        <item>Orange</item>
+        <item>Deep orange</item>
+        <item>Coral</item>
+        <item>Red orange</item>
+        <item>Red</item>
+        <item>Dark red</item>
+        <item>Light pink</item>
+        <item>Pink</item>
+        <item>Hot pink</item>
+        <item>Magenta</item>
+        <item>Light purple</item>
+        <item>Purple</item>
+        <item>Deep purple</item>
+        <item>Dark purple</item>
+        <item>Pale blue</item>
+        <item>Light blue</item>
+        <item>Sky blue</item>
+        <item>Blue</item>
+        <item>Medium blue</item>
+        <item>Royal blue</item>
+        <item>Dark blue</item>
+        <item>Navy blue</item>
+        <item>Pale teal</item>
+        <item>Light teal</item>
+        <item>Teal</item>
+        <item>Dark teal</item>
+        <item>Pale green</item>
+        <item>Light green</item>
+        <item>Green</item>
+        <item>Medium green</item>
+        <item>Pale lime</item>
+        <item>Light lime</item>
+        <item>Lime</item>
+        <item>Yellow green</item>
+        <item>Pale yellow green</item>
+        <item>Light yellow green</item>
+        <item>Chartreuse</item>
+        <item>Olive green</item>
+        <item>Pale brown</item>
+        <item>Tan</item>
+        <item>Light brown</item>
+        <item>Brown</item>
+        <item>Medium brown</item>
+        <item>Dark brown</item>
+        <item>Deep brown</item>
+        <item>Espresso</item>
+    </string-array>
 </resources>

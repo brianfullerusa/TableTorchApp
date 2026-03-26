@@ -59,6 +59,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.rockyriverapps.tabletorch.R
 import com.rockyriverapps.tabletorch.data.ColorPalette
+import com.rockyriverapps.tabletorch.data.displayName
 import com.rockyriverapps.tabletorch.ui.theme.TableTorchDimens
 import com.rockyriverapps.tabletorch.ui.theme.TorchBackground
 import com.rockyriverapps.tabletorch.ui.theme.toComposeColor
@@ -226,7 +227,12 @@ private fun PaletteListItem(
     onDelete: (() -> Unit)?,
     modifier: Modifier = Modifier
 ) {
-    val activeSuffix = stringResource(R.string.palette_active_suffix)
+    val localizedName = palette.displayName()
+    val paletteDescription = if (isActive) {
+        stringResource(R.string.a11y_palette_item_active, localizedName)
+    } else {
+        stringResource(R.string.a11y_palette_item, localizedName)
+    }
     val borderColor by animateColorAsState(
         targetValue = if (isActive) {
             MaterialTheme.colorScheme.primary
@@ -253,7 +259,7 @@ private fun PaletteListItem(
             .clip(RoundedCornerShape(TableTorchDimens.CornerRadiusMd))
             .clickable(role = Role.Button) { onSelect() }
             .semantics {
-                contentDescription = "${palette.name} palette${if (isActive) activeSuffix else ""}"
+                contentDescription = paletteDescription
             },
         shape = RoundedCornerShape(TableTorchDimens.CornerRadiusMd),
         colors = CardDefaults.cardColors(
@@ -281,7 +287,7 @@ private fun PaletteListItem(
                     horizontalArrangement = Arrangement.spacedBy(TableTorchDimens.SpacingSm)
                 ) {
                     Text(
-                        text = palette.name,
+                        text = localizedName,
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = if (isActive) FontWeight.Bold else FontWeight.Normal,
                         color = if (isActive) {
@@ -339,8 +345,7 @@ private fun PaletteListItem(
                 ) {
                     // Duplicate (available for all palettes)
                     IconButton(
-                        onClick = onDuplicate,
-                        modifier = Modifier.size(36.dp)
+                        onClick = onDuplicate
                     ) {
                         Icon(
                             imageVector = Icons.Default.ContentCopy,
@@ -353,8 +358,7 @@ private fun PaletteListItem(
                     // Rename (custom palettes only)
                     if (onRename != null) {
                         IconButton(
-                            onClick = onRename,
-                            modifier = Modifier.size(36.dp)
+                            onClick = onRename
                         ) {
                             Icon(
                                 imageVector = Icons.Default.Edit,
@@ -368,8 +372,7 @@ private fun PaletteListItem(
                     // Delete (custom palettes only)
                     if (onDelete != null) {
                         IconButton(
-                            onClick = onDelete,
-                            modifier = Modifier.size(36.dp)
+                            onClick = onDelete
                         ) {
                             Icon(
                                 imageVector = Icons.Default.Delete,

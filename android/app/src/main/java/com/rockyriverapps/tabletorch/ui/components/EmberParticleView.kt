@@ -13,6 +13,7 @@ import androidx.compose.runtime.withFrameMillis
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
@@ -69,8 +70,8 @@ fun EmberParticleView(
     modifier: Modifier = Modifier
 ) {
     val density = LocalDensity.current
-    val minSizePx = with(density) { 4.dp.toPx() }
-    val maxSizePx = with(density) { 16.dp.toPx() }
+    val minSizePx = with(density) { 32.dp.toPx() }
+    val maxSizePx = with(density) { 96.dp.toPx() }
 
     // Pre-allocated snapshot list reused each frame; count tracks active entries
     var particleSnapshot by remember { mutableStateOf(emptyList<ParticleState>()) }
@@ -139,9 +140,9 @@ fun EmberParticleView(
                             size = minSizePx + Random.nextFloat() * (maxSizePx - minSizePx),
                             color = variedColor,
                             opacity = 1f,
-                            lifetime = 3f + Random.nextFloat() * 5f,
+                            lifetime = 6f + Random.nextFloat() * 6f,
                             age = 0f,
-                            driftSpeed = 40f + Random.nextFloat() * 60f,
+                            driftSpeed = 120f + Random.nextFloat() * 100f,
                             wobblePhase = Random.nextFloat() * (2f * PI.toFloat()),
                             wobbleAmplitude = 10f + Random.nextFloat() * 20f
                         )
@@ -232,11 +233,7 @@ private fun DrawScope.drawParticle(particle: ParticleState, shape: ParticleShape
 
     when (shape) {
         ParticleShape.EMBERS -> {
-            drawCircle(
-                color = color,
-                radius = halfSize,
-                center = center
-            )
+            drawFlame(center, halfSize, color)
         }
 
         ParticleShape.HEARTS -> {
@@ -255,6 +252,56 @@ private fun DrawScope.drawParticle(particle: ParticleState, shape: ParticleShape
             drawMusicNote(center, halfSize, color)
         }
     }
+}
+
+/**
+ * Draw a flame shape using cubic bezier curves.
+ * Modeled after the Material "local_fire_department" icon silhouette.
+ */
+private fun DrawScope.drawFlame(center: Offset, halfSize: Float, color: Color) {
+    val s = halfSize
+    val flamePath = Path()
+
+    // Flame tip (top center)
+    flamePath.moveTo(center.x, center.y - s)
+
+    // Right side curve — wide belly tapering to base
+    flamePath.cubicTo(
+        center.x + s * 0.4f, center.y - s * 0.75f,  // control 1: slight outward at top
+        center.x + s * 0.9f, center.y - s * 0.2f,    // control 2: wide right belly
+        center.x + s * 0.55f, center.y + s * 0.5f     // end: taper toward base right
+    )
+
+    // Inner flicker notch on right — gives the flame a forked look
+    flamePath.cubicTo(
+        center.x + s * 0.35f, center.y + s * 0.25f,  // control 1: pull inward
+        center.x + s * 0.2f, center.y + s * 0.55f,   // control 2: dip down
+        center.x + s * 0.15f, center.y + s * 0.7f    // end: inner notch bottom
+    )
+
+    // Base curve across bottom
+    flamePath.cubicTo(
+        center.x + s * 0.05f, center.y + s * 0.85f,  // control 1
+        center.x - s * 0.05f, center.y + s * 0.85f,  // control 2
+        center.x - s * 0.15f, center.y + s * 0.7f    // end: left inner notch
+    )
+
+    // Inner flicker notch on left
+    flamePath.cubicTo(
+        center.x - s * 0.2f, center.y + s * 0.55f,
+        center.x - s * 0.35f, center.y + s * 0.25f,
+        center.x - s * 0.55f, center.y + s * 0.5f
+    )
+
+    // Left side curve back up to tip
+    flamePath.cubicTo(
+        center.x - s * 0.9f, center.y - s * 0.2f,    // control 1: wide left belly
+        center.x - s * 0.4f, center.y - s * 0.75f,   // control 2: slight outward at top
+        center.x, center.y - s                         // end: back to tip
+    )
+
+    flamePath.close()
+    drawPath(path = flamePath, color = color)
 }
 
 /**

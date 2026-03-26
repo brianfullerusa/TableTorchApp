@@ -1,6 +1,9 @@
 package com.rockyriverapps.tabletorch.data
 
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
+import androidx.compose.ui.res.stringResource
+import com.rockyriverapps.tabletorch.R
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
@@ -164,4 +167,16 @@ data class ColorPalette(
             }
         }
     }
+}
+
+/**
+ * Resolve the display name for a palette, using localized string resources
+ * for built-in palettes and the stored name for custom palettes.
+ */
+@Composable
+fun ColorPalette.displayName(): String = when (id) {
+    ColorPalette.PRESET_LOW_LIGHT_ID -> stringResource(R.string.palette_low_light)
+    ColorPalette.PRESET_BRIGHT_ID -> stringResource(R.string.palette_bright)
+    ColorPalette.PRESET_PARTY_ID -> stringResource(R.string.palette_party)
+    else -> name
 }

@@ -5,14 +5,8 @@ import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.ViewModelProvider
@@ -22,8 +16,6 @@ import androidx.navigation.compose.rememberNavController
 import com.rockyriverapps.tabletorch.data.AppSettings
 import com.rockyriverapps.tabletorch.data.PreferencesManager
 import com.rockyriverapps.tabletorch.navigation.TableTorchNavGraph
-import com.rockyriverapps.tabletorch.sensors.TiltSensorManager
-import com.rockyriverapps.tabletorch.ui.screens.SplashScreen
 import com.rockyriverapps.tabletorch.ui.theme.TableTorchTheme
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
@@ -73,27 +65,27 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             TableTorchTheme {
-                var showSplash by remember { mutableStateOf(true) }
+                // var showSplash by remember { mutableStateOf(true) }
                 val navController = rememberNavController()
 
                 Box(modifier = Modifier.fillMaxSize()) {
                     // Main content (always rendered underneath)
-                    if (!showSplash) {
+                    // if (!showSplash) {
                         TableTorchNavGraph(
                             navController = navController,
                             viewModel = viewModel
                         )
-                    }
+                    // }
 
                     // Splash screen overlay
-                    AnimatedVisibility(
-                        visible = showSplash,
-                        exit = fadeOut()
-                    ) {
-                        SplashScreen(
-                            onTimeout = { showSplash = false }
-                        )
-                    }
+                    // AnimatedVisibility(
+                    //     visible = showSplash,
+                    //     exit = fadeOut()
+                    // ) {
+                    //     SplashScreen(
+                    //         onTimeout = { showSplash = false }
+                    //     )
+                    // }
                 }
             }
         }

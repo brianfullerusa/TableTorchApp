@@ -44,7 +44,21 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.CustomAccessibilityAction
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.customActions
+import androidx.compose.ui.semantics.semantics
+import android.provider.Settings
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.ui.unit.dp
+import com.rockyriverapps.tabletorch.R
 import androidx.core.view.WindowCompat
 import com.rockyriverapps.tabletorch.data.AppSettings
 import com.rockyriverapps.tabletorch.models.ParticleShape
@@ -173,9 +187,62 @@ fun MainScreen(
         onDispose { }
     }
 
+    val brightnessPercent = (currentBrightness * 100).toInt()
+    val torchScreenDesc = stringResource(R.string.a11y_torch_screen, brightnessPercent)
+
+    // Accessibility action labels for brightness control
+    val increaseBrightnessLabel = stringResource(R.string.a11y_action_increase_brightness)
+    val decreaseBrightnessLabel = stringResource(R.string.a11y_action_decrease_brightness)
+    val maxBrightnessLabel = stringResource(R.string.a11y_action_toggle_max_brightness)
+
+    // Check system reduced motion preference
+    val context = LocalContext.current
+    val isReducedMotionEnabled = remember {
+        Settings.Global.getFloat(
+            context.contentResolver,
+            Settings.Global.ANIMATOR_DURATION_SCALE,
+            1f
+        ) == 0f
+    }
+
     Box(
         modifier = modifier
             .fillMaxSize()
+            .semantics {
+                contentDescription = torchScreenDesc
+                customActions = listOf(
+                    CustomAccessibilityAction(increaseBrightnessLabel) {
+                        if (!settings.isAngleBasedBrightnessActive) {
+                            val newBrightness = (currentBrightness + 0.10f).coerceIn(0.01f, 1f)
+                            onBrightnessChange(newBrightness)
+                            showBrightnessIndicator = true
+                        }
+                        true
+                    },
+                    CustomAccessibilityAction(decreaseBrightnessLabel) {
+                        if (!settings.isAngleBasedBrightnessActive) {
+                            val newBrightness = (currentBrightness - 0.10f).coerceIn(0.01f, 1f)
+                            onBrightnessChange(newBrightness)
+                            showBrightnessIndicator = true
+                        }
+                        true
+                    },
+                    CustomAccessibilityAction(maxBrightnessLabel) {
+                        if (!settings.isAngleBasedBrightnessActive) {
+                            if (isMaxBrightness) {
+                                onBrightnessChange(previousBrightness)
+                                isMaxBrightness = false
+                            } else {
+                                previousBrightness = currentBrightness
+                                onBrightnessChange(1f)
+                                isMaxBrightness = true
+                            }
+                            showBrightnessIndicator = true
+                        }
+                        true
+                    }
+                )
+            }
             // Full-screen immersive torch color - no margins, no rounded corners
             .background(currentColor)
             // Subtle radial glow effect emanating from center
@@ -271,40 +338,54 @@ fun MainScreen(
             }
     ) {
         // Breathing animation overlay - dims the screen with a sine wave
+        // Respects system reduced motion / "Remove animations" preference
         if (settings.enableBreathingAnimation) {
-            // key() restarts the transition when cycle duration changes
-            key(settings.breathingCycleDuration) {
-                val infiniteTransition = rememberInfiniteTransition(label = "breathing")
-                val breathingPhase by infiniteTransition.animateFloat(
-                    initialValue = 0f,
-                    targetValue = 2f * Math.PI.toFloat(),
-                    animationSpec = InfiniteRepeatableSpec(
-                        animation = tween(
-                            durationMillis = (settings.breathingCycleDuration * 1000).toInt(),
-                            easing = LinearEasing
-                        )
-                    ),
-                    label = "breathing_phase"
-                )
-                // Sine wave oscillation: 0 at peak brightness, depth at minimum
-                val dimAmount = settings.breathingDepth * ((1f - sin(breathingPhase)) / 2f)
+            if (isReducedMotionEnabled) {
+                // Static dim at half breathing depth when animations are disabled
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .background(Color.Black.copy(alpha = dimAmount))
+                        .background(Color.Black.copy(alpha = settings.breathingDepth / 2f))
+                        .clearAndSetSemantics {}
                 )
+            } else {
+                // key() restarts the transition when cycle duration changes
+                key(settings.breathingCycleDuration) {
+                    val infiniteTransition = rememberInfiniteTransition(label = "breathing")
+                    val breathingPhase by infiniteTransition.animateFloat(
+                        initialValue = 0f,
+                        targetValue = 2f * Math.PI.toFloat(),
+                        animationSpec = InfiniteRepeatableSpec(
+                            animation = tween(
+                                durationMillis = (settings.breathingCycleDuration * 1000).toInt(),
+                                easing = LinearEasing
+                            )
+                        ),
+                        label = "breathing_phase"
+                    )
+                    // Sine wave oscillation: 0 at peak brightness, depth at minimum
+                    val dimAmount = settings.breathingDepth * ((1f - sin(breathingPhase)) / 2f)
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(Color.Black.copy(alpha = dimAmount))
+                            .clearAndSetSemantics {}
+                    )
+                }
             }
         }
 
-        // Ember particle overlay
-        if (settings.enableEmberParticles) {
-            EmberParticleView(
-                selectedColors = settings.selectedColors,
-                selectedColorIndex = settings.lastSelectedColorIndex,
-                particleShape = settings.particleShape,
-                modifier = Modifier.fillMaxSize()
-            )
-        }
+        // TODO: Ember particles disabled for this version
+//        if (settings.enableEmberParticles) {
+//            EmberParticleView(
+//                selectedColors = settings.selectedColors,
+//                selectedColorIndex = settings.lastSelectedColorIndex,
+//                particleShape = settings.particleShape,
+//                modifier = Modifier
+//                    .fillMaxSize()
+//                    .clearAndSetSemantics {}
+//            )
+//        }
 
         // Brightness indicator - right edge, vertically centered
         BrightnessIndicator(
@@ -335,6 +416,34 @@ fun MainScreen(
                 onSettingsClick = { showSettingsSheet = true }
             )
         }
+
+        // Standalone settings icon - visible only when Quick Color Bar is hidden
+        AnimatedVisibility(
+            visible = !settings.showQuickColorBar,
+            enter = fadeIn(),
+            exit = fadeOut(),
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .padding(
+                    end = 16.dp,
+                    bottom = 20.dp + navigationBarPadding.calculateBottomPadding()
+                )
+        ) {
+            IconButton(
+                onClick = { showSettingsSheet = true },
+                modifier = Modifier
+                    .size(48.dp)
+                    .clip(CircleShape)
+                    .background(Color.Black.copy(alpha = 0.35f))
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Settings,
+                    contentDescription = stringResource(R.string.settings_title),
+                    tint = Color.White.copy(alpha = 0.9f),
+                    modifier = Modifier.size(22.dp)
+                )
+            }
+        }
     }
 
     // Settings bottom sheet
@@ -363,6 +472,7 @@ fun MainScreen(
                 onPreventScreenLockChange = onPreventScreenLockChange,
                 onAngleBasedBrightnessChange = onAngleBasedBrightnessChange,
                 onColorChange = onColorChange,
+                onColorSelect = onColorSelect,
                 onRestoreDefaultColors = onRestoreDefaultColors,
                 onPaletteSelect = onPaletteSelect,
                 onNavigateToPalettes = {
