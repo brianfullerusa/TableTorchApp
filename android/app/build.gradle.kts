@@ -28,7 +28,7 @@ android {
         // - versionName: use semantic versioning (MAJOR.MINOR.PATCH)
         //   MAJOR = breaking / redesign, MINOR = new features, PATCH = bug fixes
         // CI/CD can automate versionCode via: (MAJOR*10000 + MINOR*100 + PATCH)
-        versionCode = 1
+        versionCode = 5
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
@@ -124,6 +124,7 @@ dependencies {
     implementation(libs.androidx.datastore.preferences)
     implementation(libs.kotlinx.collections.immutable)
     testImplementation(libs.junit)
+    testImplementation("org.json:json:20231013")
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(platform(libs.androidx.compose.bom))

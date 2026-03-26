@@ -7,6 +7,7 @@ import androidx.lifecycle.viewModelScope
 import com.rockyriverapps.tabletorch.data.AppSettings
 import com.rockyriverapps.tabletorch.data.ColorPalette
 import com.rockyriverapps.tabletorch.data.PreferencesManager
+import com.rockyriverapps.tabletorch.data.PreferencesRepository
 import com.rockyriverapps.tabletorch.models.ParticleShape
 import com.rockyriverapps.tabletorch.sensors.TiltSensorManager
 import kotlinx.collections.immutable.toImmutableList
@@ -32,7 +33,7 @@ import kotlin.math.abs
  * It exposes brightness values that the Activity observes and applies to the Window.
  */
 class MainViewModel(
-    private val preferencesManager: PreferencesManager,
+    private val preferencesManager: PreferencesRepository,
     private val tiltSensorManager: TiltSensorManager
 ) : ViewModel() {
 
@@ -280,7 +281,7 @@ class MainViewModel(
     fun switchPalette(paletteId: String) {
         viewModelScope.launch {
             paletteMutex.withLock {
-                val allPalettes = settings.value.getAllPalettes()
+                val allPalettes = settings.value.allPalettes
                 val palette = allPalettes.find { it.id == paletteId } ?: return@withLock
                 preferencesManager.switchPalette(paletteId, palette.colors)
             }
@@ -293,9 +294,10 @@ class MainViewModel(
                 if (settings.value.customPalettes.size >= MAX_CUSTOM_PALETTES) {
                     return@withLock
                 }
+                val sanitizedName = name.trim().take(30).ifBlank { "My Palette" }
                 val newPalette = ColorPalette(
                     id = UUID.randomUUID().toString(),
-                    name = name,
+                    name = sanitizedName,
                     colors = colors.take(ColorPalette.PALETTE_SIZE).toImmutableList(),
                     isBuiltIn = false
                 )
@@ -328,8 +330,10 @@ class MainViewModel(
     fun renamePalette(paletteId: String, newName: String) {
         viewModelScope.launch {
             paletteMutex.withLock {
+                val sanitizedName = newName.trim().take(30)
+                if (sanitizedName.isBlank()) return@withLock
                 val updatedPalettes = settings.value.customPalettes.map { palette ->
-                    if (palette.id == paletteId) palette.copy(name = newName) else palette
+                    if (palette.id == paletteId) palette.copy(name = sanitizedName) else palette
                 }
                 preferencesManager.saveCustomPalettes(updatedPalettes)
             }

@@ -16,6 +16,8 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -63,14 +65,39 @@ import androidx.core.view.WindowCompat
 import com.rockyriverapps.tabletorch.data.AppSettings
 import com.rockyriverapps.tabletorch.models.ParticleShape
 import com.rockyriverapps.tabletorch.ui.components.BrightnessIndicator
-import com.rockyriverapps.tabletorch.ui.components.EmberParticleView
 import com.rockyriverapps.tabletorch.ui.components.FloatingColorBar
 import com.rockyriverapps.tabletorch.ui.components.SettingsSheetContent
 import com.rockyriverapps.tabletorch.util.findActivity
+import androidx.compose.runtime.Stable
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.math.abs
 import kotlin.math.sin
+
+/**
+ * Groups all callback parameters for [MainScreen] into a single stable data class
+ * to reduce the number of parameters and improve recomposition stability.
+ */
+@Stable
+data class MainScreenCallbacks(
+    val onBrightnessChange: (Float) -> Unit,
+    val onColorSelect: (Int) -> Unit,
+    val onDefaultBrightnessChange: (Float) -> Unit,
+    val onUseDefaultBrightnessOnLaunchChange: (Boolean) -> Unit,
+    val onPreventScreenLockChange: (Boolean) -> Unit,
+    val onAngleBasedBrightnessChange: (Boolean) -> Unit,
+    val onColorChange: (Int, Long) -> Unit,
+    val onRestoreDefaultColors: () -> Unit,
+    val onPaletteSelect: (String) -> Unit,
+    val onNavigateToPalettes: () -> Unit,
+    val onShowQuickColorBarChange: (Boolean) -> Unit,
+    val onAlwaysShowBrightnessChange: (Boolean) -> Unit,
+    val onEnableBreathingAnimationChange: (Boolean) -> Unit,
+    val onBreathingDepthChange: (Float) -> Unit,
+    val onBreathingCycleDurationChange: (Float) -> Unit,
+    val onEnableEmberParticlesChange: (Boolean) -> Unit,
+    val onParticleShapeChange: (ParticleShape) -> Unit
+)
 
 /**
  * Main screen of the TableTorch app.
@@ -91,24 +118,9 @@ import kotlin.math.sin
 fun MainScreen(
     settings: AppSettings,
     brightness: Float,
+    callbacks: MainScreenCallbacks,
     openSettings: Boolean = false,
-    onBrightnessChange: (Float) -> Unit,
-    onColorSelect: (Int) -> Unit,
-    onDefaultBrightnessChange: (Float) -> Unit,
-    onUseDefaultBrightnessOnLaunchChange: (Boolean) -> Unit,
-    onPreventScreenLockChange: (Boolean) -> Unit,
-    onAngleBasedBrightnessChange: (Boolean) -> Unit,
-    onColorChange: (Int, Long) -> Unit,
-    onRestoreDefaultColors: () -> Unit,
-    onPaletteSelect: (String) -> Unit,
-    onNavigateToPalettes: () -> Unit,
-    onShowQuickColorBarChange: (Boolean) -> Unit,
-    onAlwaysShowBrightnessChange: (Boolean) -> Unit,
-    onEnableBreathingAnimationChange: (Boolean) -> Unit,
-    onBreathingDepthChange: (Float) -> Unit,
-    onBreathingCycleDurationChange: (Float) -> Unit,
-    onEnableEmberParticlesChange: (Boolean) -> Unit,
-    onParticleShapeChange: (ParticleShape) -> Unit,
+    onSettingsOpened: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val currentColor = settings.getCurrentColor()
@@ -121,12 +133,13 @@ fun MainScreen(
 
     // Bottom sheet state for settings
     var showSettingsSheet by remember { mutableStateOf(false) }
-    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = false)
 
     // Re-open settings sheet when returning from Palettes screen
     LaunchedEffect(openSettings) {
         if (openSettings) {
             showSettingsSheet = true
+            onSettingsOpened()
         }
     }
 
@@ -214,7 +227,7 @@ fun MainScreen(
                     CustomAccessibilityAction(increaseBrightnessLabel) {
                         if (!settings.isAngleBasedBrightnessActive) {
                             val newBrightness = (currentBrightness + 0.10f).coerceIn(0.01f, 1f)
-                            onBrightnessChange(newBrightness)
+                            callbacks.onBrightnessChange(newBrightness)
                             showBrightnessIndicator = true
                         }
                         true
@@ -222,7 +235,7 @@ fun MainScreen(
                     CustomAccessibilityAction(decreaseBrightnessLabel) {
                         if (!settings.isAngleBasedBrightnessActive) {
                             val newBrightness = (currentBrightness - 0.10f).coerceIn(0.01f, 1f)
-                            onBrightnessChange(newBrightness)
+                            callbacks.onBrightnessChange(newBrightness)
                             showBrightnessIndicator = true
                         }
                         true
@@ -230,11 +243,11 @@ fun MainScreen(
                     CustomAccessibilityAction(maxBrightnessLabel) {
                         if (!settings.isAngleBasedBrightnessActive) {
                             if (isMaxBrightness) {
-                                onBrightnessChange(previousBrightness)
+                                callbacks.onBrightnessChange(previousBrightness)
                                 isMaxBrightness = false
                             } else {
                                 previousBrightness = currentBrightness
-                                onBrightnessChange(1f)
+                                callbacks.onBrightnessChange(1f)
                                 isMaxBrightness = true
                             }
                             showBrightnessIndicator = true
@@ -272,12 +285,12 @@ fun MainScreen(
                             view.performHapticFeedback(HapticFeedbackConstants.CONTEXT_CLICK)
                             if (isMaxBrightness) {
                                 // Restore previous brightness
-                                onBrightnessChange(previousBrightness)
+                                callbacks.onBrightnessChange(previousBrightness)
                                 isMaxBrightness = false
                             } else {
                                 // Save current and go to max
                                 previousBrightness = currentBrightness
-                                onBrightnessChange(1f)
+                                callbacks.onBrightnessChange(1f)
                                 isMaxBrightness = true
                             }
                             showBrightnessIndicator = true
@@ -313,7 +326,7 @@ fun MainScreen(
                         // Swipe up = increase brightness (negative Y), swipe down = decrease
                         val delta = -dragAmount.y / size.height
                         val newBrightness = (currentBrightness + delta).coerceIn(0.01f, 1f)
-                        onBrightnessChange(newBrightness)
+                        callbacks.onBrightnessChange(newBrightness)
 
                         // Haptic feedback when crossing 25%, 50%, or 75% thresholds
                         for (threshold in hapticThresholds) {
@@ -375,18 +388,6 @@ fun MainScreen(
             }
         }
 
-        // TODO: Ember particles disabled for this version
-//        if (settings.enableEmberParticles) {
-//            EmberParticleView(
-//                selectedColors = settings.selectedColors,
-//                selectedColorIndex = settings.lastSelectedColorIndex,
-//                particleShape = settings.particleShape,
-//                modifier = Modifier
-//                    .fillMaxSize()
-//                    .clearAndSetSemantics {}
-//            )
-//        }
-
         // Brightness indicator - right edge, vertically centered
         BrightnessIndicator(
             brightness = brightness,
@@ -412,8 +413,9 @@ fun MainScreen(
                 colors = settings.selectedColors,
                 selectedIndex = settings.lastSelectedColorIndex,
                 torchColor = currentColor,
-                onColorSelect = onColorSelect,
-                onSettingsClick = { showSettingsSheet = true }
+                onColorSelect = callbacks.onColorSelect,
+                onSettingsClick = { showSettingsSheet = true },
+                isReducedMotionEnabled = isReducedMotionEnabled
             )
         }
 
@@ -455,41 +457,47 @@ fun MainScreen(
             scrimColor = Color.Black.copy(alpha = 0.4f),
             shape = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp),
             dragHandle = {
-                // Drag indicator matching iOS style
+                // Drag indicator matching iOS style with 48dp touch target
                 Box(
                     modifier = Modifier
-                        .padding(top = 8.dp, bottom = 4.dp)
-                        .size(width = 36.dp, height = 5.dp)
-                        .clip(RoundedCornerShape(2.5.dp))
-                        .background(Color.White.copy(alpha = 0.3f))
-                )
+                        .fillMaxWidth()
+                        .height(48.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(width = 36.dp, height = 5.dp)
+                            .clip(RoundedCornerShape(2.5.dp))
+                            .background(Color.White.copy(alpha = 0.3f))
+                    )
+                }
             }
         ) {
             SettingsSheetContent(
                 settings = settings,
-                onDefaultBrightnessChange = onDefaultBrightnessChange,
-                onUseDefaultBrightnessOnLaunchChange = onUseDefaultBrightnessOnLaunchChange,
-                onPreventScreenLockChange = onPreventScreenLockChange,
-                onAngleBasedBrightnessChange = onAngleBasedBrightnessChange,
-                onColorChange = onColorChange,
-                onColorSelect = onColorSelect,
-                onRestoreDefaultColors = onRestoreDefaultColors,
-                onPaletteSelect = onPaletteSelect,
+                onDefaultBrightnessChange = callbacks.onDefaultBrightnessChange,
+                onUseDefaultBrightnessOnLaunchChange = callbacks.onUseDefaultBrightnessOnLaunchChange,
+                onPreventScreenLockChange = callbacks.onPreventScreenLockChange,
+                onAngleBasedBrightnessChange = callbacks.onAngleBasedBrightnessChange,
+                onColorChange = callbacks.onColorChange,
+                onColorSelect = callbacks.onColorSelect,
+                onRestoreDefaultColors = callbacks.onRestoreDefaultColors,
+                onPaletteSelect = callbacks.onPaletteSelect,
                 onNavigateToPalettes = {
                     // Dismiss sheet first, then navigate to palettes screen
                     scope.launch {
                         sheetState.hide()
                         showSettingsSheet = false
-                        onNavigateToPalettes()
+                        callbacks.onNavigateToPalettes()
                     }
                 },
-                onShowQuickColorBarChange = onShowQuickColorBarChange,
-                onAlwaysShowBrightnessChange = onAlwaysShowBrightnessChange,
-                onEnableBreathingAnimationChange = onEnableBreathingAnimationChange,
-                onBreathingDepthChange = onBreathingDepthChange,
-                onBreathingCycleDurationChange = onBreathingCycleDurationChange,
-                onEnableEmberParticlesChange = onEnableEmberParticlesChange,
-                onParticleShapeChange = onParticleShapeChange,
+                onShowQuickColorBarChange = callbacks.onShowQuickColorBarChange,
+                onAlwaysShowBrightnessChange = callbacks.onAlwaysShowBrightnessChange,
+                onEnableBreathingAnimationChange = callbacks.onEnableBreathingAnimationChange,
+                onBreathingDepthChange = callbacks.onBreathingDepthChange,
+                onBreathingCycleDurationChange = callbacks.onBreathingCycleDurationChange,
+                onEnableEmberParticlesChange = callbacks.onEnableEmberParticlesChange,
+                onParticleShapeChange = callbacks.onParticleShapeChange,
                 onDismiss = {
                     scope.launch {
                         sheetState.hide()

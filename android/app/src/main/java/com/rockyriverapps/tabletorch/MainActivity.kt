@@ -65,27 +65,13 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             TableTorchTheme {
-                // var showSplash by remember { mutableStateOf(true) }
                 val navController = rememberNavController()
 
                 Box(modifier = Modifier.fillMaxSize()) {
-                    // Main content (always rendered underneath)
-                    // if (!showSplash) {
-                        TableTorchNavGraph(
-                            navController = navController,
-                            viewModel = viewModel
-                        )
-                    // }
-
-                    // Splash screen overlay
-                    // AnimatedVisibility(
-                    //     visible = showSplash,
-                    //     exit = fadeOut()
-                    // ) {
-                    //     SplashScreen(
-                    //         onTimeout = { showSplash = false }
-                    //     )
-                    // }
+                    TableTorchNavGraph(
+                        navController = navController,
+                        viewModel = viewModel
+                    )
                 }
             }
         }

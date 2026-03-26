@@ -8,6 +8,7 @@ import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
 import org.json.JSONArray
+import org.json.JSONException
 import org.json.JSONObject
 import java.util.UUID
 
@@ -137,7 +138,7 @@ data class ColorPalette(
                     colors = colors,
                     isBuiltIn = json.optBoolean(KEY_IS_BUILT_IN, false)
                 )
-            } catch (e: Exception) {
+            } catch (e: JSONException) {
                 null
             }
         }
@@ -162,7 +163,7 @@ data class ColorPalette(
                 (0 until jsonArray.length()).mapNotNull { index ->
                     fromJson(jsonArray.getJSONObject(index))
                 }.toImmutableList()
-            } catch (e: Exception) {
+            } catch (e: JSONException) {
                 persistentListOf()
             }
         }

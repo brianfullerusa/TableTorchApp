@@ -1,6 +1,8 @@
 package com.rockyriverapps.tabletorch.ui.components
 
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.key
+import androidx.compose.ui.platform.LocalDensity
 import com.rockyriverapps.tabletorch.data.displayName
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -54,9 +56,21 @@ fun PaletteChipRow(
     onPaletteSelect: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val scrollState = rememberScrollState()
+    val density = LocalDensity.current
+    val activeIndex = palettes.indexOfFirst { it.id == activePaletteId }
+
+    LaunchedEffect(activePaletteId) {
+        if (activeIndex > 0) {
+            // Approximate chip width (horizontal padding 12dp * 2 + text + dots ~ 120dp) + spacing 8dp
+            val chipWidthPx = with(density) { (120.dp + TableTorchDimens.SpacingSm).toPx() }
+            scrollState.animateScrollTo((activeIndex * chipWidthPx).toInt())
+        }
+    }
+
     Row(
         modifier = modifier
-            .horizontalScroll(rememberScrollState())
+            .horizontalScroll(scrollState)
             .padding(vertical = TableTorchDimens.SpacingXs),
         horizontalArrangement = Arrangement.spacedBy(TableTorchDimens.SpacingSm)
     ) {

@@ -92,6 +92,7 @@ fun FloatingColorBar(
     torchColor: Color,
     onColorSelect: (Int) -> Unit,
     onSettingsClick: () -> Unit,
+    isReducedMotionEnabled: Boolean = false,
     modifier: Modifier = Modifier
 ) {
     val view = LocalView.current
@@ -99,7 +100,7 @@ fun FloatingColorBar(
 
     // Determine icon tint based on torch color luminance for contrast
     val iconTint = if (torchColor.luminance() > 0.5f) {
-        Color.White.copy(alpha = 0.85f)
+        Color.Black.copy(alpha = 0.7f)
     } else {
         Color.White.copy(alpha = 0.9f)
     }
@@ -119,16 +120,21 @@ fun FloatingColorBar(
             )
             .padding(horizontal = 16.dp, vertical = 10.dp)
     ) {
-        // Flicker animation for the selected flame
-        val infiniteTransition = rememberInfiniteTransition(label = "flameFlicker")
-        val flickerPhase by infiniteTransition.animateFloat(
-            initialValue = 0f,
-            targetValue = 2f * Math.PI.toFloat(),
-            animationSpec = InfiniteRepeatableSpec(
-                animation = tween(durationMillis = 1800, easing = LinearEasing)
-            ),
-            label = "flickerPhase"
-        )
+        // Flicker animation for the selected flame (disabled when reduced motion is on)
+        val flickerPhase = if (isReducedMotionEnabled) {
+            0f
+        } else {
+            val infiniteTransition = rememberInfiniteTransition(label = "flameFlicker")
+            val animatedPhase by infiniteTransition.animateFloat(
+                initialValue = 0f,
+                targetValue = 2f * Math.PI.toFloat(),
+                animationSpec = InfiniteRepeatableSpec(
+                    animation = tween(durationMillis = 1800, easing = LinearEasing)
+                ),
+                label = "flickerPhase"
+            )
+            animatedPhase
+        }
 
         Row(
             verticalAlignment = Alignment.CenterVertically,

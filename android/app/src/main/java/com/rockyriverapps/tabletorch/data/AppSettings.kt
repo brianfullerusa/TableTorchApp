@@ -20,18 +20,18 @@ import kotlinx.collections.immutable.toImmutableList
 data class AppSettings(
     val defaultBrightness: Float = 0.85f,
     val useDefaultBrightnessOnLaunch: Boolean = true,
-    val selectedColors: ImmutableList<Long> = TorchColors.defaultColorsImmutable,
+    val selectedColors: ImmutableList<Long> = ColorPalette.LowLight.colors,
     val isAngleBasedBrightnessActive: Boolean = false,
-    val lastSelectedColorIndex: Int = 1, // Default to Soft White (index 1)
+    val lastSelectedColorIndex: Int = 4, // Default to index 4
     val preventScreenLock: Boolean = true,
     val showQuickColorBar: Boolean = true,
-    val alwaysShowBrightness: Boolean = false,
+    val alwaysShowBrightness: Boolean = true,
     val enableBreathingAnimation: Boolean = false,
     val breathingDepth: Float = 0.12f,
     val breathingCycleDuration: Float = 4f,
     val enableEmberParticles: Boolean = false,
     val particleShape: ParticleShape = ParticleShape.EMBERS,
-    val activePaletteId: String = ColorPalette.DEFAULT_ACTIVE_PALETTE_ID,
+    val activePaletteId: String = ColorPalette.PRESET_LOW_LIGHT_ID,
     val customPalettes: ImmutableList<ColorPalette> = persistentListOf()
 ) {
     /**
@@ -55,18 +55,18 @@ data class AppSettings(
     }
 
     /**
-     * Get all available palettes: built-in presets + user custom palettes.
-     * Returns them in display order: built-ins first, then custom.
+     * All available palettes: built-in presets + user custom palettes.
+     * Cached lazily; safe because AppSettings is an immutable data class.
      */
-    fun getAllPalettes(): ImmutableList<ColorPalette> {
-        return (ColorPalette.builtInPresets + customPalettes).toImmutableList()
+    val allPalettes: ImmutableList<ColorPalette> by lazy {
+        (ColorPalette.builtInPresets + customPalettes).toImmutableList()
     }
 
     /**
      * Get the currently active palette, falling back to Bright if not found.
      */
     fun getActivePalette(): ColorPalette {
-        return getAllPalettes().find { it.id == activePaletteId }
+        return allPalettes.find { it.id == activePaletteId }
             ?: ColorPalette.Bright
     }
 

@@ -6,7 +6,7 @@ import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -16,6 +16,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.rockyriverapps.tabletorch.MainViewModel
 import com.rockyriverapps.tabletorch.ui.screens.MainScreen
+import com.rockyriverapps.tabletorch.ui.screens.MainScreenCallbacks
 import com.rockyriverapps.tabletorch.ui.screens.PaletteListScreen
 
 /**
@@ -38,8 +39,8 @@ fun TableTorchNavGraph(
     navController: NavHostController,
     viewModel: MainViewModel
 ) {
-    val settings by viewModel.settings.collectAsState()
-    val brightness by viewModel.currentBrightness.collectAsState()
+    val settings by viewModel.settings.collectAsStateWithLifecycle()
+    val brightness by viewModel.currentBrightness.collectAsStateWithLifecycle()
 
     NavHost(
         navController = navController,
@@ -63,32 +64,35 @@ fun TableTorchNavGraph(
             MainScreen(
                 settings = settings,
                 brightness = brightness,
+                callbacks = MainScreenCallbacks(
+                    onBrightnessChange = viewModel::setBrightness,
+                    onColorSelect = viewModel::updateLastSelectedColorIndex,
+                    onDefaultBrightnessChange = viewModel::updateDefaultBrightness,
+                    onUseDefaultBrightnessOnLaunchChange = viewModel::updateUseDefaultBrightnessOnLaunch,
+                    onPreventScreenLockChange = viewModel::updatePreventScreenLock,
+                    onAngleBasedBrightnessChange = viewModel::updateAngleBasedBrightness,
+                    onColorChange = viewModel::updateColor,
+                    onRestoreDefaultColors = viewModel::restoreDefaultColors,
+                    onPaletteSelect = viewModel::switchPalette,
+                    onNavigateToPalettes = {
+                        navController.navigate(Routes.PALETTES)
+                    },
+                    onShowQuickColorBarChange = viewModel::updateShowQuickColorBar,
+                    onAlwaysShowBrightnessChange = viewModel::updateAlwaysShowBrightness,
+                    onEnableBreathingAnimationChange = viewModel::updateEnableBreathingAnimation,
+                    onBreathingDepthChange = viewModel::updateBreathingDepth,
+                    onBreathingCycleDurationChange = viewModel::updateBreathingCycleDuration,
+                    onEnableEmberParticlesChange = viewModel::updateEnableEmberParticles,
+                    onParticleShapeChange = viewModel::updateParticleShape
+                ),
                 openSettings = openSettings,
-                onBrightnessChange = viewModel::setBrightness,
-                onColorSelect = viewModel::updateLastSelectedColorIndex,
-                onDefaultBrightnessChange = viewModel::updateDefaultBrightness,
-                onUseDefaultBrightnessOnLaunchChange = viewModel::updateUseDefaultBrightnessOnLaunch,
-                onPreventScreenLockChange = viewModel::updatePreventScreenLock,
-                onAngleBasedBrightnessChange = viewModel::updateAngleBasedBrightness,
-                onColorChange = viewModel::updateColor,
-                onRestoreDefaultColors = viewModel::restoreDefaultColors,
-                onPaletteSelect = viewModel::switchPalette,
-                onNavigateToPalettes = {
-                    navController.navigate(Routes.PALETTES)
-                },
-                onShowQuickColorBarChange = viewModel::updateShowQuickColorBar,
-                onAlwaysShowBrightnessChange = viewModel::updateAlwaysShowBrightness,
-                onEnableBreathingAnimationChange = viewModel::updateEnableBreathingAnimation,
-                onBreathingDepthChange = viewModel::updateBreathingDepth,
-                onBreathingCycleDurationChange = viewModel::updateBreathingCycleDuration,
-                onEnableEmberParticlesChange = viewModel::updateEnableEmberParticles,
-                onParticleShapeChange = viewModel::updateParticleShape
+                onSettingsOpened = { openSettings = false }
             )
         }
 
         composable(Routes.PALETTES) {
             PaletteListScreen(
-                palettes = remember(settings.customPalettes) { settings.getAllPalettes() },
+                palettes = remember(settings.customPalettes) { settings.allPalettes },
                 activePaletteId = settings.activePaletteId,
                 currentColors = settings.selectedColors,
                 onNavigateBack = {

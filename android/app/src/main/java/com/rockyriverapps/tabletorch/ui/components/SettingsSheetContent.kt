@@ -41,6 +41,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -55,7 +56,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import com.rockyriverapps.tabletorch.R
 import com.rockyriverapps.tabletorch.data.AppSettings
 import com.rockyriverapps.tabletorch.data.ColorPalette
@@ -208,15 +212,16 @@ private fun SheetHeader(onDismiss: () -> Unit) {
             modifier = Modifier.align(Alignment.Center)
         )
 
-        TextButton(
+        IconButton(
             onClick = onDismiss,
-            modifier = Modifier.align(Alignment.CenterEnd)
+            modifier = Modifier
+                .align(Alignment.CenterEnd)
+                .size(48.dp)
         ) {
-            Text(
-                text = stringResource(R.string.settings_done),
-                style = MaterialTheme.typography.bodyLarge,
-                fontWeight = FontWeight.SemiBold,
-                color = ToggleActiveColor
+            Icon(
+                imageVector = Icons.Default.Close,
+                contentDescription = stringResource(R.string.settings_done),
+                tint = Color.White.copy(alpha = 0.9f)
             )
         }
     }
@@ -306,7 +311,7 @@ private fun TorchColorsSection(
 
     // Palette chip row for quick switching between palettes
     PaletteChipRow(
-        palettes = remember(settings.customPalettes) { settings.getAllPalettes() },
+        palettes = remember(settings.customPalettes) { settings.allPalettes },
         activePaletteId = settings.activePaletteId,
         onPaletteSelect = onPaletteSelect,
         modifier = Modifier.fillMaxWidth()
@@ -439,6 +444,18 @@ private fun ColorSwatchCard(
             color = if (isLightColor(color)) Color.Black.copy(alpha = 0.7f) else Color.White.copy(alpha = 0.8f),
             modifier = Modifier.padding(bottom = 6.dp)
         )
+
+        // Edit icon hint for long-press color editing
+        Icon(
+            imageVector = Icons.Outlined.Edit,
+            contentDescription = null,
+            tint = if (color.luminance() > 0.5f) Color.Black.copy(alpha = 0.35f)
+                   else Color.White.copy(alpha = 0.35f),
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .padding(6.dp)
+                .size(14.dp)
+        )
     }
 
     // Color picker dialog (opened via long press)
@@ -503,6 +520,7 @@ private fun BrightnessSection(
             value = defaultBrightness,
             onValueChange = onDefaultBrightnessChange,
             valueRange = 0.1f..1f,
+            steps = 8,
             modifier = Modifier
                 .fillMaxWidth()
                 .semantics {
@@ -625,6 +643,7 @@ private fun VisualEffectsSection(
                 value = settings.breathingDepth,
                 onValueChange = onBreathingDepthChange,
                 valueRange = 0.02f..0.40f,
+                steps = 7,
                 modifier = Modifier.fillMaxWidth(),
                 colors = TorchSliderDefaults.colors()
             )
@@ -650,75 +669,13 @@ private fun VisualEffectsSection(
                 value = settings.breathingCycleDuration,
                 onValueChange = onBreathingCycleDurationChange,
                 valueRange = 1f..10f,
+                steps = 8,
                 modifier = Modifier.fillMaxWidth(),
                 colors = TorchSliderDefaults.colors()
             )
         }
     }
 
-    // TODO: Ember particles option hidden for this version
-//    Spacer(modifier = Modifier.height(4.dp))
-//
-//    // Ember particles toggle
-//    SheetToggleRow(
-//        title = stringResource(R.string.settings_ember_particles),
-//        subtitle = stringResource(R.string.settings_ember_particles_desc),
-//        checked = settings.enableEmberParticles,
-//        onCheckedChange = onEnableEmberParticlesChange
-//    )
-//
-//    // Expandable shape picker when particles are enabled
-//    AnimatedVisibility(
-//        visible = settings.enableEmberParticles,
-//        enter = expandVertically(),
-//        exit = shrinkVertically()
-//    ) {
-//        Column(
-//            modifier = Modifier
-//                .fillMaxWidth()
-//                .padding(start = 8.dp, top = 8.dp)
-//        ) {
-//            Text(
-//                text = stringResource(R.string.settings_particle_shape),
-//                style = MaterialTheme.typography.bodySmall,
-//                color = SubtitleTextColor
-//            )
-//            Spacer(modifier = Modifier.height(8.dp))
-//            Row(
-//                modifier = Modifier.fillMaxWidth(),
-//                horizontalArrangement = Arrangement.SpaceEvenly
-//            ) {
-//                ParticleShape.entries.forEach { shape ->
-//                    val isSelected = settings.particleShape == shape
-//                    Column(
-//                        horizontalAlignment = Alignment.CenterHorizontally,
-//                        modifier = Modifier
-//                            .clip(RoundedCornerShape(8.dp))
-//                            .clickable { onParticleShapeChange(shape) }
-//                            .then(
-//                                if (isSelected) {
-//                                    Modifier.background(ToggleActiveColor.copy(alpha = 0.2f))
-//                                } else {
-//                                    Modifier
-//                                }
-//                            )
-//                            .padding(horizontal = 8.dp, vertical = 6.dp)
-//                    ) {
-//                        Text(
-//                            text = shape.symbol,
-//                            style = MaterialTheme.typography.titleLarge,
-//                            color = if (isSelected) ToggleActiveColor else Color.White.copy(alpha = 0.7f)
-//                        )
-//                        Text(
-//                            text = shape.label,
-//                            style = MaterialTheme.typography.labelSmall,
-//                            color = if (isSelected) ToggleActiveColor else SubtitleTextColor
-//                        )
-//                    }
-//                }
-//            }
-//        }
-//    }
 }
 
 // ============================================================================

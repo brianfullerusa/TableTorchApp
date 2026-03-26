@@ -35,7 +35,7 @@ private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(na
  * This is a singleton class to prevent memory leaks from multiple instances
  * being created on configuration changes. Use [getInstance] to obtain the instance.
  */
-class PreferencesManager private constructor(context: Context) {
+class PreferencesManager private constructor(context: Context) : PreferencesRepository {
 
     // Use application context to prevent activity leaks
     private val appContext = context.applicationContext
@@ -93,7 +93,7 @@ class PreferencesManager private constructor(context: Context) {
      * StateFlow of current app settings, emits whenever any setting changes.
      * Uses SharingStarted.Eagerly since preferences are needed immediately on app start.
      */
-    val settingsFlow: StateFlow<AppSettings> = appContext.dataStore.data
+    override val settingsFlow: StateFlow<AppSettings> = appContext.dataStore.data
         .catch { exception ->
             if (exception is IOException) {
                 Log.e(TAG, "Error reading preferences", exception)
@@ -117,7 +117,8 @@ class PreferencesManager private constructor(context: Context) {
             useDefaultBrightnessOnLaunch = preferences[PreferencesKeys.USE_DEFAULT_BRIGHTNESS_ON_LAUNCH] ?: defaults.useDefaultBrightnessOnLaunch,
             selectedColors = colors,
             isAngleBasedBrightnessActive = preferences[PreferencesKeys.IS_ANGLE_BASED_BRIGHTNESS_ACTIVE] ?: defaults.isAngleBasedBrightnessActive,
-            lastSelectedColorIndex = preferences[PreferencesKeys.LAST_SELECTED_COLOR_INDEX] ?: defaults.lastSelectedColorIndex,
+            lastSelectedColorIndex = (preferences[PreferencesKeys.LAST_SELECTED_COLOR_INDEX] ?: defaults.lastSelectedColorIndex)
+                .coerceIn(0, ColorPalette.PALETTE_SIZE - 1),
             preventScreenLock = preferences[PreferencesKeys.PREVENT_SCREEN_LOCK] ?: defaults.preventScreenLock,
             showQuickColorBar = preferences[PreferencesKeys.SHOW_QUICK_COLOR_BAR] ?: defaults.showQuickColorBar,
             alwaysShowBrightness = preferences[PreferencesKeys.ALWAYS_SHOW_BRIGHTNESS] ?: defaults.alwaysShowBrightness,
@@ -142,7 +143,7 @@ class PreferencesManager private constructor(context: Context) {
     /**
      * Update the default brightness value
      */
-    suspend fun updateDefaultBrightness(brightness: Float) {
+    override suspend fun updateDefaultBrightness(brightness: Float) {
         try {
             appContext.dataStore.edit { preferences ->
                 preferences[PreferencesKeys.DEFAULT_BRIGHTNESS] = brightness.coerceIn(0f, 1f)
@@ -155,7 +156,7 @@ class PreferencesManager private constructor(context: Context) {
     /**
      * Update whether to use default brightness on app launch
      */
-    suspend fun updateUseDefaultBrightnessOnLaunch(enabled: Boolean) {
+    override suspend fun updateUseDefaultBrightnessOnLaunch(enabled: Boolean) {
         try {
             appContext.dataStore.edit { preferences ->
                 preferences[PreferencesKeys.USE_DEFAULT_BRIGHTNESS_ON_LAUNCH] = enabled
@@ -168,7 +169,7 @@ class PreferencesManager private constructor(context: Context) {
     /**
      * Update the angle-based brightness toggle
      */
-    suspend fun updateAngleBasedBrightness(enabled: Boolean) {
+    override suspend fun updateAngleBasedBrightness(enabled: Boolean) {
         try {
             appContext.dataStore.edit { preferences ->
                 preferences[PreferencesKeys.IS_ANGLE_BASED_BRIGHTNESS_ACTIVE] = enabled
@@ -181,7 +182,7 @@ class PreferencesManager private constructor(context: Context) {
     /**
      * Update the last selected color index
      */
-    suspend fun updateLastSelectedColorIndex(index: Int) {
+    override suspend fun updateLastSelectedColorIndex(index: Int) {
         try {
             appContext.dataStore.edit { preferences ->
                 preferences[PreferencesKeys.LAST_SELECTED_COLOR_INDEX] = index.coerceIn(0, ColorPalette.PALETTE_SIZE - 1)
@@ -194,7 +195,7 @@ class PreferencesManager private constructor(context: Context) {
     /**
      * Update the prevent screen lock toggle
      */
-    suspend fun updatePreventScreenLock(enabled: Boolean) {
+    override suspend fun updatePreventScreenLock(enabled: Boolean) {
         try {
             appContext.dataStore.edit { preferences ->
                 preferences[PreferencesKeys.PREVENT_SCREEN_LOCK] = enabled
@@ -207,7 +208,7 @@ class PreferencesManager private constructor(context: Context) {
     /**
      * Update a specific torch color
      */
-    suspend fun updateColor(index: Int, colorValue: Long) {
+    override suspend fun updateColor(index: Int, colorValue: Long) {
         if (index in 0 until ColorPalette.PALETTE_SIZE) {
             try {
                 appContext.dataStore.edit { preferences ->
@@ -222,7 +223,7 @@ class PreferencesManager private constructor(context: Context) {
     /**
      * Restore all colors to their defaults
      */
-    suspend fun restoreDefaultColors() {
+    override suspend fun restoreDefaultColors() {
         try {
             appContext.dataStore.edit { preferences ->
                 TorchColors.defaultColors.forEachIndexed { index, colorValue ->
@@ -237,7 +238,7 @@ class PreferencesManager private constructor(context: Context) {
     /**
      * Update the show quick color bar toggle
      */
-    suspend fun updateShowQuickColorBar(enabled: Boolean) {
+    override suspend fun updateShowQuickColorBar(enabled: Boolean) {
         try {
             appContext.dataStore.edit { preferences ->
                 preferences[PreferencesKeys.SHOW_QUICK_COLOR_BAR] = enabled
@@ -250,7 +251,7 @@ class PreferencesManager private constructor(context: Context) {
     /**
      * Update the always show brightness indicator toggle
      */
-    suspend fun updateAlwaysShowBrightness(enabled: Boolean) {
+    override suspend fun updateAlwaysShowBrightness(enabled: Boolean) {
         try {
             appContext.dataStore.edit { preferences ->
                 preferences[PreferencesKeys.ALWAYS_SHOW_BRIGHTNESS] = enabled
@@ -264,7 +265,7 @@ class PreferencesManager private constructor(context: Context) {
     // Visual Effects Operations
     // ========================================================================
 
-    suspend fun updateEnableBreathingAnimation(enabled: Boolean) {
+    override suspend fun updateEnableBreathingAnimation(enabled: Boolean) {
         try {
             appContext.dataStore.edit { preferences ->
                 preferences[PreferencesKeys.ENABLE_BREATHING_ANIMATION] = enabled
@@ -274,7 +275,7 @@ class PreferencesManager private constructor(context: Context) {
         }
     }
 
-    suspend fun updateBreathingDepth(depth: Float) {
+    override suspend fun updateBreathingDepth(depth: Float) {
         try {
             appContext.dataStore.edit { preferences ->
                 preferences[PreferencesKeys.BREATHING_DEPTH] = depth.coerceIn(0.02f, 0.40f)
@@ -284,7 +285,7 @@ class PreferencesManager private constructor(context: Context) {
         }
     }
 
-    suspend fun updateBreathingCycleDuration(duration: Float) {
+    override suspend fun updateBreathingCycleDuration(duration: Float) {
         try {
             appContext.dataStore.edit { preferences ->
                 preferences[PreferencesKeys.BREATHING_CYCLE_DURATION] = duration.coerceIn(1f, 10f)
@@ -294,7 +295,7 @@ class PreferencesManager private constructor(context: Context) {
         }
     }
 
-    suspend fun updateEnableEmberParticles(enabled: Boolean) {
+    override suspend fun updateEnableEmberParticles(enabled: Boolean) {
         try {
             appContext.dataStore.edit { preferences ->
                 preferences[PreferencesKeys.ENABLE_EMBER_PARTICLES] = enabled
@@ -304,7 +305,7 @@ class PreferencesManager private constructor(context: Context) {
         }
     }
 
-    suspend fun updateParticleShape(shape: ParticleShape) {
+    override suspend fun updateParticleShape(shape: ParticleShape) {
         try {
             appContext.dataStore.edit { preferences ->
                 preferences[PreferencesKeys.PARTICLE_SHAPE] = shape.name
@@ -322,7 +323,7 @@ class PreferencesManager private constructor(context: Context) {
      * Update the active palette ID and apply the palette colors to the torch color slots.
      * This keeps the existing per-color DataStore keys in sync with the active palette.
      */
-    suspend fun switchPalette(paletteId: String, paletteColors: List<Long>) {
+    override suspend fun switchPalette(paletteId: String, paletteColors: List<Long>) {
         try {
             appContext.dataStore.edit { preferences ->
                 preferences[PreferencesKeys.ACTIVE_PALETTE_ID] = paletteId
@@ -332,9 +333,6 @@ class PreferencesManager private constructor(context: Context) {
                         preferences[PreferencesKeys.colorKey(index)] = colorValue
                     }
                 }
-                // Reset color index to 0 when switching palettes to avoid
-                // stale selection pointing at a very different color
-                preferences[PreferencesKeys.LAST_SELECTED_COLOR_INDEX] = 0
             }
         } catch (e: IOException) {
             Log.e(TAG, "Failed to switch palette", e)
@@ -344,7 +342,7 @@ class PreferencesManager private constructor(context: Context) {
     /**
      * Save the list of custom palettes as a JSON string.
      */
-    suspend fun saveCustomPalettes(palettes: List<ColorPalette>) {
+    override suspend fun saveCustomPalettes(palettes: List<ColorPalette>) {
         try {
             val json = ColorPalette.listToJson(palettes)
             appContext.dataStore.edit { preferences ->
@@ -359,7 +357,7 @@ class PreferencesManager private constructor(context: Context) {
      * Update the active palette ID only (without changing colors).
      * Used when the current colors already match the palette.
      */
-    suspend fun updateActivePaletteId(paletteId: String) {
+    override suspend fun updateActivePaletteId(paletteId: String) {
         try {
             appContext.dataStore.edit { preferences ->
                 preferences[PreferencesKeys.ACTIVE_PALETTE_ID] = paletteId

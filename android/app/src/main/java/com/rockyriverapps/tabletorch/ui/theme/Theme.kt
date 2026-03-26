@@ -2,7 +2,6 @@ package com.rockyriverapps.tabletorch.ui.theme
 
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
-import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.graphics.Color
@@ -37,39 +36,12 @@ private val DarkTableTorchColorScheme = darkColorScheme(
     outlineVariant = TorchOutlineVariant
 )
 
-private val LightTableTorchColorScheme = lightColorScheme(
-    primary = TorchOrangeLight,
-    onPrimary = Color.White,
-    primaryContainer = TorchSecondaryContainerLight,
-    onPrimaryContainer = TorchOrangeLight,
-    secondary = TorchSecondaryLight,
-    onSecondary = Color.White,
-    secondaryContainer = TorchSecondaryContainerLight,
-    onSecondaryContainer = TorchSecondaryLight,
-    tertiary = TorchSecondaryLight,
-    onTertiary = Color.White,
-    tertiaryContainer = TorchSecondaryContainerLight,
-    onTertiaryContainer = TorchSecondaryLight,
-    error = TorchErrorLight,
-    onError = Color.White,
-    errorContainer = TorchErrorContainerLight,
-    onErrorContainer = TorchErrorLight,
-    background = TorchBackgroundLight,
-    onBackground = TorchOnSurfaceLight,
-    surface = TorchSurfaceLight,
-    onSurface = TorchOnSurfaceLight,
-    surfaceVariant = TorchSurfaceLight,
-    onSurfaceVariant = TorchOnSurfaceLight,
-    outline = TorchOutlineLight,
-    outlineVariant = TorchOutlineVariantLight
-)
-
 @Composable
 fun TableTorchTheme(
     darkTheme: Boolean = true,
     content: @Composable () -> Unit
 ) {
-    val colorScheme = if (darkTheme) DarkTableTorchColorScheme else LightTableTorchColorScheme
+    val colorScheme = DarkTableTorchColorScheme
     val view = LocalView.current
 
     if (!view.isInEditMode) {
