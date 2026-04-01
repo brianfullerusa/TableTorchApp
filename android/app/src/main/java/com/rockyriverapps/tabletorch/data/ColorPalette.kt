@@ -109,7 +109,7 @@ data class ColorPalette(
         )
 
         /** Default active palette ID */
-        const val DEFAULT_ACTIVE_PALETTE_ID = PRESET_BRIGHT_ID
+        const val DEFAULT_ACTIVE_PALETTE_ID = PRESET_LOW_LIGHT_ID
 
         /**
          * Deserialize a palette from a JSON object.

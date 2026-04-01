@@ -28,7 +28,7 @@ android {
         // - versionName: use semantic versioning (MAJOR.MINOR.PATCH)
         //   MAJOR = breaking / redesign, MINOR = new features, PATCH = bug fixes
         // CI/CD can automate versionCode via: (MAJOR*10000 + MINOR*100 + PATCH)
-        versionCode = 5
+        versionCode = 6
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"

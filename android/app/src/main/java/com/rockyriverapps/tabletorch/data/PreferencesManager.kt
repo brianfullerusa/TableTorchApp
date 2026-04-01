@@ -103,15 +103,22 @@ class PreferencesManager private constructor(context: Context) : PreferencesRepo
             }
         }
         .map { preferences ->
+        val defaults = AppSettings.DEFAULT
+
+        // Resolve active palette ID first so we can derive color fallbacks from it
+        val activePaletteId = preferences[PreferencesKeys.ACTIVE_PALETTE_ID] ?: defaults.activePaletteId
+        val fallbackPalette = ColorPalette.builtInPresets.find { it.id == activePaletteId }
+            ?: ColorPalette.LowLight
+
+        // Color slots fall back to the active palette's colors, ensuring consistency
         val colors = (0 until ColorPalette.PALETTE_SIZE).map { index ->
             preferences[PreferencesKeys.colorKey(index)]
-                ?: TorchColors.defaultColorsImmutable[index]
+                ?: fallbackPalette.colors[index]
         }.toImmutableList()
 
         val customPalettesJson = preferences[PreferencesKeys.CUSTOM_PALETTES_JSON]
         val customPalettes = ColorPalette.listFromJson(customPalettesJson)
 
-        val defaults = AppSettings.DEFAULT
         AppSettings(
             defaultBrightness = preferences[PreferencesKeys.DEFAULT_BRIGHTNESS] ?: defaults.defaultBrightness,
             useDefaultBrightnessOnLaunch = preferences[PreferencesKeys.USE_DEFAULT_BRIGHTNESS_ON_LAUNCH] ?: defaults.useDefaultBrightnessOnLaunch,
@@ -131,7 +138,7 @@ class PreferencesManager private constructor(context: Context) : PreferencesRepo
             } catch (_: IllegalArgumentException) {
                 defaults.particleShape
             },
-            activePaletteId = preferences[PreferencesKeys.ACTIVE_PALETTE_ID] ?: defaults.activePaletteId,
+            activePaletteId = activePaletteId,
             customPalettes = customPalettes
         )
     }.stateIn(
@@ -226,7 +233,12 @@ class PreferencesManager private constructor(context: Context) : PreferencesRepo
     override suspend fun restoreDefaultColors() {
         try {
             appContext.dataStore.edit { preferences ->
-                TorchColors.defaultColors.forEachIndexed { index, colorValue ->
+                // Derive default colors from the active palette for consistency
+                val activePaletteId = preferences[PreferencesKeys.ACTIVE_PALETTE_ID]
+                    ?: AppSettings.DEFAULT.activePaletteId
+                val palette = ColorPalette.builtInPresets.find { it.id == activePaletteId }
+                    ?: ColorPalette.LowLight
+                palette.colors.forEachIndexed { index, colorValue ->
                     preferences[PreferencesKeys.colorKey(index)] = colorValue
                 }
             }
