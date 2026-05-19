@@ -76,16 +76,10 @@ final class AppSettings: ObservableObject {
     @Published var breathingCycleDuration: Double {
         didSet { saveSettings() }
     }
-    @Published var enableEmberParticles: Bool {
-        didSet { saveSettings() }
-    }
     @Published var showQuickColorBar: Bool {
         didSet { saveSettings() }
     }
     @Published var alwaysShowBrightnessIndicator: Bool {
-        didSet { saveSettings() }
-    }
-    @Published var particleShape: ParticleShape {
         didSet { saveSettings() }
     }
 
@@ -190,6 +184,14 @@ final class AppSettings: ObservableObject {
     init() {
         let defaults = UserDefaults.standard
 
+        // One-time cleanup: remove keys from the removed particle effects feature.
+        let particleCleanupKey = "didCleanupParticleEffectsKeys_v1"
+        if !defaults.bool(forKey: particleCleanupKey) {
+            defaults.removeObject(forKey: "enableEmberParticles")
+            defaults.removeObject(forKey: "particleShape")
+            defaults.set(true, forKey: particleCleanupKey)
+        }
+
         // Register defaults
         defaults.register(defaults: [
             "defaultBrightness": 1.0,
@@ -200,7 +202,6 @@ final class AppSettings: ObservableObject {
             "enableBreathingAnimation": false,
             "breathingDepth": 0.12,
             "breathingCycleDuration": 4.0,
-            "enableEmberParticles": false,
             "showQuickColorBar": true,
             "alwaysShowBrightnessIndicator": true
         ])
@@ -234,17 +235,8 @@ final class AppSettings: ObservableObject {
         let enableBreathingAnimationValue = defaults.bool(forKey: "enableBreathingAnimation")
         let breathingDepthValue = defaults.double(forKey: "breathingDepth")
         let breathingCycleDurationValue = defaults.double(forKey: "breathingCycleDuration")
-        let enableEmberParticlesValue = defaults.bool(forKey: "enableEmberParticles")
         let showQuickColorBarValue = defaults.bool(forKey: "showQuickColorBar")
         let alwaysShowBrightnessIndicatorValue = defaults.bool(forKey: "alwaysShowBrightnessIndicator")
-
-        let particleShapeValue: ParticleShape
-        if let raw = defaults.string(forKey: "particleShape"),
-           let shape = ParticleShape(rawValue: raw) {
-            particleShapeValue = shape
-        } else {
-            particleShapeValue = .embers
-        }
 
         // Load custom palettes
         let customPalettesValue: [ColorPalette]
@@ -284,10 +276,8 @@ final class AppSettings: ObservableObject {
         self.enableBreathingAnimation = enableBreathingAnimationValue
         self.breathingDepth = breathingDepthValue
         self.breathingCycleDuration = breathingCycleDurationValue
-        self.enableEmberParticles = enableEmberParticlesValue
         self.showQuickColorBar = showQuickColorBarValue
         self.alwaysShowBrightnessIndicator = alwaysShowBrightnessIndicatorValue
-        self.particleShape = particleShapeValue
         self.customPalettes = customPalettesValue
         self.activePaletteId = activePaletteIdValue
 
@@ -318,12 +308,6 @@ final class AppSettings: ObservableObject {
                let colorIndex = Int(args[idx + 1]),
                self.selectedColors.indices.contains(colorIndex) {
                 self.lastSelectedColorIndex = colorIndex
-            }
-
-            if args.contains("-uiEmberParticles") {
-                self.enableEmberParticles = true
-            } else {
-                self.enableEmberParticles = false
             }
         }
 
@@ -377,10 +361,8 @@ final class AppSettings: ObservableObject {
         defaults.set(enableBreathingAnimation, forKey: "enableBreathingAnimation")
         defaults.set(breathingDepth, forKey: "breathingDepth")
         defaults.set(breathingCycleDuration, forKey: "breathingCycleDuration")
-        defaults.set(enableEmberParticles, forKey: "enableEmberParticles")
         defaults.set(showQuickColorBar, forKey: "showQuickColorBar")
         defaults.set(alwaysShowBrightnessIndicator, forKey: "alwaysShowBrightnessIndicator")
-        defaults.set(particleShape.rawValue, forKey: "particleShape")
 
         if dirtyPalettes {
             if let encoded = try? JSONEncoder().encode(customPalettes) {
