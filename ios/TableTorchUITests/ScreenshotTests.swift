@@ -9,7 +9,7 @@
 //
 //  Tests are split into two groups:
 //  - Localized tests: run for every locale (splash, main, settings)
-//  - English-only tests: color/ember screenshots with no localized text
+//  - English-only tests: color screenshots with no localized text
 //
 //  The shell orchestrator runs English-only tests once and copies them
 //  into every locale's output folder.
@@ -34,8 +34,7 @@ final class ScreenshotTests: XCTestCase {
     private func launch(
         splash: Bool = false,
         palette: String? = nil,
-        colorIndex: Int? = nil,
-        embers: Bool = false
+        colorIndex: Int? = nil
     ) {
         var args = ["-uiScreenshotMode"]
         if splash {
@@ -46,9 +45,6 @@ final class ScreenshotTests: XCTestCase {
         }
         if let colorIndex {
             args += ["-uiColorIndex", "\(colorIndex)"]
-        }
-        if embers {
-            args.append("-uiEmberParticles")
         }
         app.launchArguments = args
         app.launch()
@@ -141,7 +137,7 @@ final class ScreenshotTests: XCTestCase {
     }
 }
 
-// MARK: - English-Only Screenshots (color/ember, no localized text)
+// MARK: - English-Only Screenshots (color, no localized text)
 
 final class ColorScreenshotTests: XCTestCase {
 
@@ -153,11 +149,8 @@ final class ColorScreenshotTests: XCTestCase {
         app = XCUIApplication()
     }
 
-    private func launch(palette: String, colorIndex: Int, embers: Bool = false) {
+    private func launch(palette: String, colorIndex: Int) {
         var args = ["-uiScreenshotMode", "-uiPalette", palette, "-uiColorIndex", "\(colorIndex)"]
-        if embers {
-            args.append("-uiEmberParticles")
-        }
         app.launchArguments = args
         app.launch()
     }
@@ -190,13 +183,4 @@ final class ColorScreenshotTests: XCTestCase {
         }
     }
 
-    // MARK: - Party Palette with Ember Particles
-
-    func testPartyEmberColors() {
-        for colorIndex in 0..<6 {
-            launch(palette: "party", colorIndex: colorIndex, embers: true)
-            sleep(8)
-            takeScreenshot(named: "08_party_ember_color\(colorIndex)")
-        }
-    }
 }

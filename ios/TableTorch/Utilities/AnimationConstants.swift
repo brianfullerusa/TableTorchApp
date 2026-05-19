@@ -83,18 +83,6 @@ enum AnimationConstants {
         static let flameHeight: CGFloat = 160
     }
 
-    // MARK: - Ember Particle Constants
-
-    enum Particles {
-        static let spawnRate: Double = 40.0  // particles per second
-        static let minLifetime: Double = 3.0
-        static let maxLifetime: Double = 8.0
-        static let minSize: CGFloat = 4.0
-        static let maxSize: CGFloat = 16.0
-        static let driftSpeed: CGFloat = 60.0
-        static let wobbleAmplitude: CGFloat = 40.0
-    }
-
     // MARK: - Glow Layer Constants
 
     enum Glow {

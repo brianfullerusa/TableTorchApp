@@ -181,56 +181,9 @@ struct SettingsSheetView: View {
                         .tint(.orange)
                 }
             }
-
-            EmberToggleView(
-                title: "Ember Particles",
-                isOn: Binding(
-                    get: { settings.enableEmberParticles && !reduceMotion },
-                    set: { settings.enableEmberParticles = $0 }
-                ),
-                subtitle: reduceMotion ? "Disabled (Reduce Motion is on)" : "Floating particles on warm colors"
-            )
-
-            if settings.enableEmberParticles && !reduceMotion {
-                particleShapePicker
-            }
         }
         .glassCard(tintColor: .orange)
         .animation(AnimationConstants.smoothTransition, value: settings.enableBreathingAnimation)
-        .animation(AnimationConstants.smoothTransition, value: settings.enableEmberParticles)
-    }
-
-    private var particleShapePicker: some View {
-        HStack(spacing: 8) {
-            ForEach(ParticleShape.allCases) { shape in
-                Button {
-                    settings.particleShape = shape
-                    HapticEngine.shared.selectionChanged()
-                } label: {
-                    VStack(spacing: 4) {
-                        Image(systemName: shape.pickerSymbolName)
-                            .font(.system(size: 18))
-                        Text(shape.displayName)
-                            .font(.caption2)
-                    }
-                    .frame(maxWidth: .infinity, minHeight: 44)
-                    .background(
-                        RoundedRectangle(cornerRadius: 8)
-                            .fill(settings.particleShape == shape
-                                  ? Color.orange.opacity(0.3)
-                                  : Color.white.opacity(0.08))
-                    )
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 8)
-                            .stroke(settings.particleShape == shape
-                                    ? Color.orange
-                                    : Color.clear, lineWidth: 1.5)
-                    )
-                }
-                .foregroundColor(settings.particleShape == shape ? .orange : .white.opacity(0.7))
-            }
-        }
-        .transition(.opacity.combined(with: .move(edge: .top)))
     }
 }
 
