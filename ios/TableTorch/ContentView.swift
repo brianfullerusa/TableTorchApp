@@ -81,7 +81,6 @@ struct ContentView: View {
         GeometryReader { geometry in
             ZStack {
                 canvasLayer
-                particleLayer
                 brightnessIndicatorLayer
                 bottomControls(safeAreaBottom: geometry.safeAreaInsets.bottom)
             }
@@ -106,16 +105,6 @@ struct ContentView: View {
             enableBreathing: settings.enableBreathingAnimation,
             breathingDepth: settings.breathingDepth,
             cycleDuration: settings.breathingCycleDuration
-        )
-        .ignoresSafeArea()
-    }
-
-    private var particleLayer: some View {
-        EmberParticleView(
-            allColors: settings.selectedColors,
-            selectedIndex: selectedIndex,
-            isEnabled: settings.enableEmberParticles,
-            particleShape: settings.particleShape
         )
         .ignoresSafeArea()
     }
