@@ -6,8 +6,10 @@ DerivedData/
 build/
 Build/
 *.xcworkspace/xcuserdata/
+*.xcodeproj/xcuserdata/
 *.xcodeproj/project.xcworkspace/xcuserdata/
 *.xcuserdata/
+*.xcuserdatad/
 *.xcuserstate
 
 # Swift Package Manager
@@ -48,6 +50,12 @@ local.properties
 *.aab
 *.dex
 *.class
+
+# Android signing & secrets
+*.jks
+*.keystore
+keystore.properties
+google-services.json
 
 # Android build outputs
 android/app/build/

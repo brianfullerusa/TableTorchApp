@@ -7,25 +7,27 @@ This is a multi-platform project with iOS and Android applications sharing commo
 ```
 TableTorch/
 ├── ios/                      # iOS/Xcode project
+│   └── docs/                 # iOS-specific design and feature docs
 ├── android/                  # Android Studio project
-├── shared/                   # Shared assets and documentation
-│   ├── assets/               # Images, icons for both platforms
-│   ├── api-specs/            # API documentation
-│   └── docs/                 # Project plans and documentation
+│   └── docs/                 # Android-specific design and feature docs
+├── docs/                     # Cross-platform changelogs and reference notes
+├── shared/                   # Cross-platform planning notes (gitignored)
+├── scripts/                  # Screenshot capture helpers
 └── AGENTS.md
 ```
 
 ### iOS App
-The TableTorch SwiftUI app lives in the `ios/TableTorch/` directory. `MenuReaderApp.swift` wires the entry point, while views such as `ContentView.swift`, `SettingsView.swift`, `BrightnessSliderView.swift`, `ColorButtonsView.swift`, and `SplashView.swift` compose the UI. Device-facing services sit alongside them: `BrightnessManager.swift` manages screen brightness, and `MotionManager.swift` streams device pitch for angle-aware dimming. Visual assets are under `ios/TableTorch/Assets.xcassets`, and SwiftUI previews live in `ios/TableTorch/Preview Content`. Open `ios/TableTorch.xcodeproj` to inspect targets or adjust build settings.
+The TableTorch SwiftUI app lives in the `ios/TableTorch/` directory. `TableTorchApp.swift` wires the entry point. Views such as `ContentView.swift`, `SettingsView.swift`, and `SplashView.swift` compose the UI, with additional views organized under `Views/`. Device-facing services live in `Managers/`: `BrightnessManager.swift` manages screen brightness, and `MotionManager.swift` streams device pitch for angle-aware dimming. Visual assets are under `ios/TableTorch/Assets.xcassets`, and SwiftUI previews live in `ios/TableTorch/Preview Content`. Open `ios/TableTorch.xcodeproj` to inspect targets or adjust build settings.
 
 ### Android App
 The Android app lives in the `android/` directory. Open this folder in Android Studio to build and run the app.
 
-### Shared Resources
-The `shared/` directory contains assets and documentation used by both platforms:
-- `shared/assets/` - Common images and icons (copy to each platform's asset catalog as needed)
-- `shared/api-specs/` - API specifications and contracts
-- `shared/docs/` - Project plans, design documents, and cross-platform documentation
+### Documentation Layout
+Platform-specific design and feature docs live alongside their app:
+- `ios/docs/` - iOS-specific design and feature docs
+- `android/docs/` - Android-specific design and feature docs
+- `docs/` - Cross-platform changelogs, issue notes, and reference guides
+- `shared/` - Cross-platform planning notes (gitignored; local only)
 
 ## Build, Test, and Development Commands
 
